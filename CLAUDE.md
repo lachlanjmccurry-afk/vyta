@@ -19,7 +19,7 @@ The owner is not a developer. Explain what you're doing in plain English, and **
 - Private repo: https://github.com/lachlanjmccurry-afk/vyta (branch `main`). Commits use the GitHub noreply address (set in this repo's own git config, not globally).
 - Git and the GitHub CLI (`gh`) were installed with winget for the current user only. A shell opened before that install may need its PATH refreshed.
 - `.gitignore` excludes `.env`, `tokens.json`, anything named like a token, secret or credential, `.venv`, and all `data\` and `data_*\` folders (Xero downloads and everything made from them). **Never commit business data or secrets.** Run `git status` before every commit, and check that nothing under `data` is staged.
-- Ask before pushing.
+- After finishing and testing a piece of work, commit and push to main without asking. Before every commit, run git status and confirm nothing from the data folders, .env, tokens or credentials is staged. Never force push.
 
 ## File map
 
