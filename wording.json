@@ -206,5 +206,38 @@
     "High": "Based on a full {months} of {of} months of trading data.",
     "Medium": "Based on {months} of {of} months of trading data. Trends and yearly figures may shift as more months come in.",
     "Low": "Only {months} of {of} months have trading activity, so these scores rest on limited data. Treat them as an early indication and re-check once more months are available."
+  },
+
+  "_cash_page_help": "Dashboard Cash page. {start}/{end} = month names, {months} = months covered. Step names must match cashflow.py.",
+  "cash_page": {
+    "title": "Where has the cash gone?",
+    "intro": "How cash moved from {start} to {end} ({months} months). Each bar adds to or takes away from the opening balance.",
+    "short_history": "Only 12 months of data were available, so this starts at the first month-end ({start}).",
+    "steps": {
+      "Operating profit": "Net profit from the profit and loss report for these months.",
+      "ATO movement": "A rising ATO balance keeps cash in the business for now, but it is a debt that must be paid.",
+      "Debt movement": "New bank loans bring cash in; repayments take it out. Overdrafts are already inside cash.",
+      "Change in debtors": "When customers owe more, sales have been made but the cash has not been collected yet.",
+      "Change in creditors": "When the business owes suppliers more, it has held on to cash by paying later.",
+      "Other": "Everything else, such as owner drawings, buying or selling equipment, and non-cash costs like depreciation."
+    },
+    "cash_balance_title": "Month-end cash balance"
+  },
+
+  "_indicators_page_help": "Dashboard Indicators page.",
+  "indicators_page": {
+    "intro": "Each line shows the last 12 month-ends, worked out with the same formula as the score. Click Details for the full trend.",
+    "short_history": "Earlier points use whatever months were available up to that month-end, so the first few may cover less than a full year.",
+    "no_trend": "No trend: {reason}."
+  },
+
+  "_owner_questions_page_help": "Dashboard Owner questions page. Answers are entered in scorecard.json (the \"answer\" field of each question).",
+  "owner_questions_page": {
+    "intro": "Some things can't be read from Xero. These answers sharpen the scores; until they're in, the related checks stay out of the scores.",
+    "how_to_answer": "To record an answer, add it to the \"answer\" field of the question in scorecard.json, then refresh this page.",
+    "not_answered": "Not answered yet",
+    "waiting_title": "Indicators waiting on owner input",
+    "waiting_none": "No indicators are waiting on owner input.",
+    "override_title": "Statutory demand override"
   }
 }
