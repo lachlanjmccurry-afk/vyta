@@ -23,6 +23,7 @@ from pathlib import Path
 
 import streamlit as st
 
+import demo
 import score
 import snapshots
 import sync
@@ -287,6 +288,8 @@ CSS = f"""
 def data_folders():
     """Folders that build_model.py has already processed, e.g. data, data_healthy, data_stressed."""
     folders = [p.name for p in Path(".").iterdir() if (p / "model" / "monthly_summary.csv").exists()]
+    if demo.is_demo():                          # online demo: only the made-up test businesses
+        folders = [f for f in folders if f in demo.FOLDERS]
     return sorted(folders, key=lambda name: (name != "data", name))
 
 
@@ -394,8 +397,12 @@ def sidebar(main_pages, more_pages, current, folder):
                 state = "on" if p.url_path == current.url_path else "off"
                 with st.container(key=f"nav-{state}-{p.url_path or 'home'}"):
                     st.page_link(p, label=p.title, icon=p.icon)
-        title, body = ((text.get("connected_title"), text.get("connected_text")) if is_xero(folder)
-                       else (text.get("sample_title"), text.get("sample_text")))
+        if demo.is_demo():
+            title, body = text.get("demo_title"), text.get("demo_text")
+        elif is_xero(folder):
+            title, body = text.get("connected_title"), text.get("connected_text")
+        else:
+            title, body = text.get("sample_title"), text.get("sample_text")
         md(f"<div class='vy-connected'><b>{esc(title)}</b>{esc(body)}</div>")
 
 
@@ -419,7 +426,8 @@ def fill_topbar(cols, run, folder, on_help_page):
         status = text.get("synced_xero" if is_xero(folder) else "synced_sample", "")
         md(f"<div class='vy-sync'><span class='dot'></span>{esc(status)}<small>{esc(last_updated_text(folder))}</small></div>")
     with cols[4]:
-        refresh_button(folder)
+        if not demo.is_demo():                  # the online demo has nothing to refresh
+            refresh_button(folder)
     with cols[5]:
         if on_help_page:
             md(f"<div style='text-align:right'><a class='vy-link' href='#get-listed' target='_self'>"

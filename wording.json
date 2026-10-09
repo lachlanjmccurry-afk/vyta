@@ -309,6 +309,8 @@
     "connected_text": "Read-only. Vyta never changes your books.",
     "sample_title": "Sample data",
     "sample_text": "A made-up test business. Not connected to Xero.",
+    "demo_title": "Demo version",
+    "demo_text": "Two made-up businesses. Not connected to Xero, and nothing you do here is saved.",
     "period": "12 months to {end}",
     "synced_xero": "Synced daily from Xero",
     "synced_sample": "Sample data",

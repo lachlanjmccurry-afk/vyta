@@ -26,6 +26,7 @@ scores the chosen business once, then shows the chosen page. Shared pieces are i
 The pages only read the files made by build_model.py and sync.py. Refresh now runs sync.py, which
 (for the data folder only) reads from Xero - never writes to it.
 All wording comes from wording.json, scorecard.json and firms.json; the theme is in .streamlit\\config.toml.
+The online demo (demo_app.py) runs this same file in demo mode: test businesses only, no Refresh now.
 """
 
 import streamlit as st
