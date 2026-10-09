@@ -1,20 +1,25 @@
 """
 VYTA - Shared look and helpers for the dashboard pages
 -------------------------------------------------------
-Palette, styling, the logo mark, result pills and loading the scores. Used by dashboard.py and
-every page in views\\. Read-only: never writes files and never contacts Xero.
+Palette, styling, the logo mark, result pills, loading the scores and the Refresh now button.
+Used by dashboard.py and every page in views\\. Never writes files itself: Refresh now runs sync.py
+in a separate process (which, for the data folder only, reads from Xero).
 """
 
 import contextlib
 import html
 import io
 import json
-from datetime import date
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import streamlit as st
 
 import score
+import snapshots
+import sync
 from charts import INK, MUTED, NAVY, RULE
 from report_pdf import RATING_STYLE, rating_key
 
@@ -187,8 +192,42 @@ def masthead(run, title=None):
     d = run["d"]
     sample = " · sample data" if d["org"].startswith("TEST") else ""
     md(f"""<div class="vy-eyebrow">Financial health check · {esc(d['org'])}{esc(sample)}</div>
-    <div class="vy-meta">12 months to {d['months'][-1]['month']:%d %B %Y} · prepared {date.today():%d %B %Y}</div>
+    <div class="vy-meta">12 months to {d['months'][-1]['month']:%d %B %Y} · {esc(last_updated_text(run['base']))}</div>
     {f'<h2 class="vy-title">{esc(title)}</h2>' if title else ''}""")
+
+
+def last_updated_text(folder):
+    text = wording().get("refresh", {})
+    when = snapshots.when_text(snapshots.last_updated(folder))
+    return f"{text.get('last_updated', 'Last updated')} {when}" if when else text.get("never", "Not refreshed yet")
+
+
+def refresh(folder):
+    """Run sync.py for one folder in its own process (so a crash can't take the dashboard down).
+    Returns (worked, plain-English message)."""
+    try:
+        done = subprocess.run([sys.executable, "sync.py", str(folder)], cwd=sync.HERE, capture_output=True,
+                              text=True, encoding="utf-8", errors="replace", timeout=900,
+                              env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+    except subprocess.TimeoutExpired:
+        return False, "The refresh took more than 15 minutes and was stopped. Your existing data has been kept."
+    ends = [l for l in done.stdout.splitlines() if l.startswith(("[DONE]", "[STOPPED]"))]
+    message = ends[-1] if ends else f"The refresh stopped unexpectedly. See {Path(folder) / sync.LOG}."
+    return done.returncode == 0, message.replace("[DONE]", "").replace("[STOPPED]", "").strip()
+
+
+def refresh_panel(folder):
+    """Sidebar: when the data was last updated, and the Refresh now button."""
+    text = wording().get("refresh", {})
+    flash = st.session_state.pop("vy_flash", None)
+    md(f"<div class='vy-meta'>{esc(last_updated_text(folder))}</div>")
+    help_text = text.get("help_xero" if Path(folder).name == sync.XERO_FOLDER else "help_offline")
+    if st.button(text.get("button", "Refresh now"), key="refresh", help=help_text, width="stretch"):
+        with st.spinner(text.get("running", "Refreshing...")):
+            st.session_state["vy_flash"] = refresh(folder)
+        st.rerun()
+    if flash:
+        (st.success if flash[0] else st.error)(flash[1])
 
 
 def heading(text, sub=None):

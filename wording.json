@@ -262,5 +262,32 @@
     "waiting_title": "Indicators waiting on owner input",
     "waiting_none": "No indicators are waiting on owner input.",
     "override_title": "Statutory demand override"
+  },
+
+  "_history_page_help": "Dashboard History page (snapshots saved by sync.py). Placeholders: {date} in 'one'; {before} and {after} (the two snapshot dates) in 'changes_sub' and 'changes_none'.",
+  "history_page": {
+    "title": "History",
+    "intro": "Each time the data is refreshed, Vyta saves both scores and every indicator's result. This page shows how they have moved.",
+    "none": "No history yet. A snapshot is saved each time the data is refreshed: press Refresh now, or wait for the daily 7am update.",
+    "one": "One snapshot so far, from {date}. The charts and the list of changes start once there are two.",
+    "distress_chart": "Distress score",
+    "distress_sub": "Higher is worse.",
+    "viability_chart": "Viability score",
+    "viability_sub": "Higher is better.",
+    "changes_title": "What changed since last time",
+    "changes_sub": "Indicators that changed colour between {before} and {after}.",
+    "changes_none": "No indicator changed colour between {before} and {after}.",
+    "new_indicator": "New",
+    "snapshots_title": "Every snapshot"
+  },
+
+  "_refresh_help": "The Last updated line and Refresh now button in the dashboard sidebar.",
+  "refresh": {
+    "last_updated": "Last updated",
+    "never": "Not refreshed yet",
+    "button": "Refresh now",
+    "help_xero": "Pulls the latest figures from Xero (read-only), rebuilds and re-scores. Takes about a minute.",
+    "help_offline": "Rebuilds and re-scores this test business from its saved files. Xero isn't contacted.",
+    "running": "Refreshing - this takes about a minute..."
   }
 }

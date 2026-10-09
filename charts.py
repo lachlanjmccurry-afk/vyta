@@ -115,6 +115,28 @@ def waterfall(bridge):
     return fig
 
 
+def score_history(snaps, kind, bands):
+    """One score (0-100) across the saved snapshots, with the band boundaries as dotted lines.
+    One chart per score: Distress and Viability point in opposite directions, so they never share a chart."""
+    xs = [s["_taken"] for s in snaps]
+    ys = [s[kind]["score"] for s in snaps]
+    fig = go.Figure(go.Scatter(
+        x=xs, y=ys, mode="lines+markers", connectgaps=False, line=dict(color=NAVY, width=2),
+        marker=dict(color=NAVY, size=8, line=dict(color="#FFFFFF", width=2)),
+        customdata=[f"{s[kind]['score']:.1f} · {s[kind]['band']}" if s[kind]["score"] is not None
+                    else s[kind]["band"] for s in snaps],
+        hovertemplate="%{x|%d %b %Y, %H:%M}<br><b>%{customdata}</b><extra></extra>"))
+    for b in bands:
+        if b["from"] > 0:
+            fig.add_hline(y=b["from"], line=dict(color=WARM_GREY, width=1, dash="dot"), layer="below",
+                          annotation=dict(text=f"{b['band']} from {b['from']}", font=dict(color=MUTED, size=11),
+                                          bgcolor="rgba(255,255,255,0.7)"),
+                          annotation_position="top left")
+    fig.update_layout(template=TEMPLATE, height=240, hovermode="x", yaxis=dict(range=[0, 100], dtick=20),
+                      xaxis=dict(tickformat="%d %b"))
+    return fig
+
+
 def cash_line(months):
     """Month-end cash balance over the period, for context under the waterfall."""
     xs = [m["month"] for m in months]

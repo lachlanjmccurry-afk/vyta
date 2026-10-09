@@ -14,12 +14,15 @@ Pages (in views\\):
   Indicators       - every indicator with a 12-month sparkline; Details opens the full trend chart
   What if?         - sliders for price, revenue, costs, overhead, debtor collection and an ATO plan;
                      both scores re-worked live by whatif.py (scored by score.score_data)
+  History          - both scores across the saved snapshots, and which indicators changed colour
   Owner questions  - the questions only the owner can answer, and what they feed into
 
-This file sets up the shared look, the logo and the client picker, scores the chosen client once,
-then shows the chosen page. Shared pieces are in ui.py, charts in charts.py.
+This file sets up the shared look, the logo, the client picker and the Last updated line with its
+Refresh now button, scores the chosen client once, then shows the chosen page. Shared pieces are in
+ui.py, charts in charts.py.
 
-Read-only: it reads the files already made by build_model.py and never contacts Xero.
+The pages only read the files made by build_model.py and sync.py. Refresh now runs sync.py, which
+(for the data folder only) reads from Xero - never writes to it.
 All wording comes from wording.json and scorecard.json; colours and theme are in .streamlit\\config.toml.
 """
 
@@ -38,6 +41,7 @@ if not folders:
 with st.sidebar:
     ui.logo()
     folder = st.selectbox("Client", folders, format_func=ui.org_name, key="folder")
+    ui.refresh_panel(folder)
 
 st.session_state["vy_run"] = ui.run_scoring(folder)
 
@@ -46,6 +50,7 @@ page = st.navigation([
     st.Page("views/cash.py", title="Cash"),
     st.Page("views/indicators.py", title="Indicators"),
     st.Page("views/whatif.py", title="What if?"),
+    st.Page("views/history.py", title="History"),
     st.Page("views/owner_questions.py", title="Owner questions"),
 ], position="top")
 page.run()
