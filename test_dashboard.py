@@ -15,7 +15,8 @@ from streamlit.testing.v1 import AppTest
 
 import ui
 
-PAGES = ["views/overview.py", "views/cash.py", "views/indicators.py", "views/owner_questions.py"]
+PAGES = ["views/overview.py", "views/cash.py", "views/indicators.py", "views/whatif.py",
+         "views/owner_questions.py"]
 FOLDERS = ui.data_folders()
 
 
@@ -51,6 +52,20 @@ class TestPagesLoad(unittest.TestCase):
                 at.switch_page("views/indicators.py").run()
                 at.button(key="details-D1").click().run()
                 self.check(at, f"{folder} D1 details")
+
+    def test_whatif_sliders_recalculate(self):
+        for folder in FOLDERS:
+            with self.subTest(folder=folder):
+                at = app(folder)
+                at.switch_page("views/whatif.py").run()
+                at.slider(key="wi_overhead").set_value(20).run()
+                at.slider(key="wi_debtor_days").set_value(30).run()
+                at.toggle(key="wi_ato_plan").set_value(True).run()
+                self.check(at, f"{folder} what if")
+                text = " ".join(m.value for m in at.markdown)
+                self.assertIn("Cutting overhead by 20%, collecting debtors 30 days faster and putting the ATO", text)
+                at.button[0].click().run()            # Reset
+                self.assertEqual(at.slider(key="wi_overhead").value, 0)
 
     def test_cash_page_has_waterfall(self):
         at = app(FOLDERS[0])

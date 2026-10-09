@@ -851,7 +851,13 @@ def compute(base):
     cfg = load_config()
     wording = load_wording()
     d = load_data(base, cfg)
+    return score_data(d, cfg, wording)
 
+
+def score_data(d, cfg, wording):
+    """Score already-loaded figures. compute() uses this for the real data; whatif.py uses it for
+    adjusted figures, so a what-if is always scored by exactly the same rules."""
+    base = d["base"]
     results = assess(d, cfg)
     problems = []
     for r in results:
@@ -864,7 +870,7 @@ def compute(base):
     return {"base": base, "d": d, "cfg": cfg, "results": results, "scores": scores, "bands": bands,
             "override_notes": override_notes, "pathway": pathway, "summary": pathway_summary(wording, bands),
             "confidence": data_confidence(d, cfg, wording), "verdict": verdict(wording, bands, d["org"]),
-            "problems": list(dict.fromkeys(problems))}
+            "problems": list(dict.fromkeys(problems)), "wording": wording}
 
 
 def main():

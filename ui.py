@@ -62,6 +62,7 @@ CSS = f"""
   .vy-card .num span {{ font-family: inherit; font-size: 1.05rem; color: {MUTED}; }}
   .vy-card .band {{ font-size: 1.05rem; font-weight: 600; color: {INK}; margin-top: var(--s1); }}
   .vy-card .hint {{ font-size: .8rem; color: {MUTED}; margin-top: var(--s2); }}
+  .vy-card .num span.arrow, .arrow {{ color: {MUTED}; font-size: inherit; margin: 0 var(--s2); }}
   .vy-dot {{ display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: var(--s2);
              vertical-align: 1px; }}
 

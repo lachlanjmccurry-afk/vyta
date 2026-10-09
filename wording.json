@@ -231,6 +231,29 @@
     "no_trend": "No trend: {reason}."
   },
 
+  "_whatif_page_help": "Dashboard What if? page. {levers} = the lever phrases joined with commas and 'and'; {d_before}/{d_after} = distress bands, {v_before}/{v_after} = viability bands. The sentence is given a capital letter automatically.",
+  "whatif_page": {
+    "intro": "Try changes to the business and see how the scores would move. Nothing here changes the real scores or the data.",
+    "levers": {
+      "price": "raising prices by {pct}",
+      "revenue_up": "growing sales volume by {pct}",
+      "revenue_down": "a {pct} fall in sales volume",
+      "cost_of_sales": "cutting cost of sales by {pct}",
+      "overhead": "cutting overhead by {pct}",
+      "debtor_days": "collecting debtors {days} days faster",
+      "ato_plan": "putting the ATO debt on a 12-month payment plan"
+    },
+    "moves_both": "{levers} moves this business from {d_before} to {d_after} distress and from {v_before} to {v_after} viability.",
+    "moves_distress": "{levers} moves this business from {d_before} to {d_after} distress.",
+    "moves_viability": "{levers} moves this business from {v_before} to {v_after} viability.",
+    "no_change": "{levers} doesn't change either band: distress stays {d_before} and viability stays {v_before}.",
+    "pathway_change": "The recommended pathway changes from {before} to {after}.",
+    "no_levers": "Move a slider to see how the scores would change.",
+    "changes_title": "Indicators that change colour",
+    "no_changes": "No indicator changes colour.",
+    "assumptions": "How this works: price, volume, cost and overhead changes are applied to each of the last 12 months, and the extra profit is assumed to arrive as cash. Faster collection turns that many days of sales from debtors into cash at the latest month-end. The ATO payment plan pays the first of 12 equal instalments from cash at the latest month-end. Unpaid-invoice ageing (D8, D10), depreciation and interest are left as they are."
+  },
+
   "_owner_questions_page_help": "Dashboard Owner questions page. Answers are entered in scorecard.json (the \"answer\" field of each question).",
   "owner_questions_page": {
     "intro": "Some things can't be read from Xero. These answers sharpen the scores; until they're in, the related checks stay out of the scores.",

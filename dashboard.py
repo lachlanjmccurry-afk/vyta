@@ -12,6 +12,8 @@ Pages (in views\\):
   Overview         - the adviser's memo: verdict, the two scores, top issues, pathway, PDF export
   Cash             - "Where has the cash gone?" waterfall (worked out in cashflow.py)
   Indicators       - every indicator with a 12-month sparkline; Details opens the full trend chart
+  What if?         - sliders for price, revenue, costs, overhead, debtor collection and an ATO plan;
+                     both scores re-worked live by whatif.py (scored by score.score_data)
   Owner questions  - the questions only the owner can answer, and what they feed into
 
 This file sets up the shared look, the logo and the client picker, scores the chosen client once,
@@ -43,6 +45,7 @@ page = st.navigation([
     st.Page("views/overview.py", title="Overview", default=True),
     st.Page("views/cash.py", title="Cash"),
     st.Page("views/indicators.py", title="Indicators"),
+    st.Page("views/whatif.py", title="What if?"),
     st.Page("views/owner_questions.py", title="Owner questions"),
 ], position="top")
 page.run()
