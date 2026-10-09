@@ -39,10 +39,10 @@
       "red_overdrawn": "There is no cash buffer: the bank balance is {cash} (overdrawn) at {month}, so any unexpected bill has to be met from the overdraft or new funding."
     },
     "D4": {
-      "_also_available": "{ato_start} {ato_now} {ato_increase} {month}",
-      "green": "The amount owed to the ATO ({ato_now}) isn't building up month after month, a good sign that tax is being paid on time. Keep lodging and paying BAS, PAYG and super by their due dates.",
-      "amber": "The amount owed to the ATO has risen for {value} months in a row, to {ato_now}. This can be normal in the run-up to a BAS payment, but check it is paid in full when due.",
-      "red": "The amount owed to the ATO has risen for {value} months in a row (Red at {threshold} months or more), from {ato_start} to {ato_now}. Growing tax debt is one of the clearest early signs of a cash problem, and unpaid PAYG, GST and super can lead to director penalty notices."
+      "_also_available": "{ato_start} {ato_now} {ato_increase} {month}  ({ato_start}/{ato_now} read like 'a $791 credit' or '$11,062 owed')",
+      "green": "The ATO balance ({ato_now}) isn't building up month after month, a good sign that tax is being paid on time. Keep lodging and paying BAS, PAYG and super by their due dates.",
+      "amber": "The ATO balance has risen for {value} months in a row, to {ato_now}. This can be normal in the run-up to a BAS payment, but check it is paid in full when due.",
+      "red": "The ATO balance has risen for {value} months in a row (Red at {threshold} months or more), from {ato_start} to {ato_now}. Growing tax debt is one of the clearest early signs of a cash problem, and unpaid PAYG, GST and super can lead to director penalty notices."
     },
     "D5": {
       "_also_available": "{debt_before} {debt_now} {month_before} {month}",
@@ -161,22 +161,50 @@
     }
   },
 
-  "pathways": {
+  "_verdicts_help": "The one-sentence headline at the top of the dashboard and PDF: what the business's situation is. {org} = business name. Keep it to the situation; the action goes in 'pathways' below so the two don't repeat each other.",
+  "verdicts": {
     "Low": {
-      "Strong": "The business is in good shape: it is trading profitably and paying its debts. Keep doing what is working and check in each quarter.",
-      "Uncertain": "There is no immediate cash pressure, but profitability isn't convincing. Now is the time to work on pricing, margins and overheads.",
-      "Weak": "Cash is fine for now, but the business isn't making money. Fix the business model before it becomes a cash problem."
+      "Strong": "{org} is in good financial health: it is trading profitably and paying its debts on time.",
+      "Uncertain": "{org} has no immediate cash pressure, but its profitability isn't yet convincing.",
+      "Weak": "{org} is paying its way for now, but the business itself isn't making money."
     },
     "Moderate": {
-      "Strong": "A sound business under some cash pressure. Act early: chase debtors, talk to the ATO about a payment plan, or refinance.",
-      "Uncertain": "Cash is tightening and profitability is unclear. Work out where the cash has been going and get advice on a turnaround plan.",
-      "Weak": "Cash pressure is building in a business that isn't making money. Get professional advice on restructuring or a planned exit."
+      "Strong": "{org} is a sound business that is starting to feel cash pressure.",
+      "Uncertain": "{org} is under growing cash pressure, and it isn't clear the business is profitable enough to fix it.",
+      "Weak": "{org} is under cash pressure, and the business isn't making money."
     },
     "High": {
-      "Strong": "Serious cash and debt pressure, but the underlying business makes money, so it may be worth saving through a formal restructure (SBR, VA or safe harbour). Get insolvency advice now.",
-      "Uncertain": "Serious financial distress, and it isn't clear the business can recover. Get urgent advice from a registered insolvency practitioner.",
-      "Weak": "Serious distress in a business that isn't making money. Get urgent advice from a registered insolvency practitioner on the safest way to close or sell."
+      "Strong": "{org} is under serious cash and debt pressure, but the underlying business makes money.",
+      "Uncertain": "{org} is in serious financial distress, and it isn't clear the business can recover.",
+      "Weak": "{org} is in serious financial distress, and the business isn't making money."
     }
   },
-  "pathway_not_enough_data": "There isn't enough data yet to place the business on the outcome matrix."
+  "verdict_not_enough_data": "There isn't enough data yet to reach a verdict on {org}.",
+
+  "_pathways_help": "Shown under 'Recommended pathway', straight after the pathway name from scorecard.json (e.g. 'Urgent advice: assess restructure vs liquidation'). Add the why or the first step - don't restate the pathway name or the verdict.",
+  "pathways": {
+    "Low": {
+      "Strong": "Keep doing what is working and protect the cash buffer.",
+      "Uncertain": "Do it now, while there is no cash pressure forcing rushed decisions.",
+      "Weak": "Start with the indicators above: they show where the business is losing money."
+    },
+    "Moderate": {
+      "Strong": "Acting now, while the business is still profitable, keeps the most options open.",
+      "Uncertain": "An adviser can help trace where the cash has gone and build a turnaround plan.",
+      "Weak": "Get professional advice soon: the longer cash pressure runs, the fewer options remain."
+    },
+    "High": {
+      "Strong": "Get insolvency advice now: a formal restructure works best when it starts early.",
+      "Uncertain": "Speak to a registered insolvency practitioner now; acting early keeps more options open.",
+      "Weak": "A registered insolvency practitioner can advise on the safest way to close or sell, and on directors' obligations."
+    }
+  },
+  "pathway_not_enough_data": "There isn't enough data yet to place the business on the outcome matrix.",
+
+  "_data_confidence_help": "Shown with the scores. {months} = months with trading activity, {of} = months looked at (usually 12).",
+  "data_confidence": {
+    "High": "Based on a full {months} of {of} months of trading data.",
+    "Medium": "Based on {months} of {of} months of trading data. Trends and yearly figures may shift as more months come in.",
+    "Low": "Only {months} of {of} months have trading activity, so these scores rest on limited data. Treat them as an early indication and re-check once more months are available."
+  }
 }

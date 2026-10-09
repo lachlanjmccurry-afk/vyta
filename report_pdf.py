@@ -50,10 +50,12 @@ def esc(text):
 BASE = ParagraphStyle("base", fontName="Helvetica", fontSize=9.5, leading=13, textColor=colors.HexColor("#222222"))
 SMALL = ParagraphStyle("small", parent=BASE, fontSize=8, leading=10.5, textColor=colors.HexColor("#555555"))
 H1 = ParagraphStyle("h1", parent=BASE, fontName="Helvetica-Bold", fontSize=18, leading=22, spaceAfter=2)
+# Headings are kept with the content below them using KeepTogether where they're placed (not keepWithNext,
+# which combines badly with KeepTogether and pushes whole sections onto new pages)
 H2 = ParagraphStyle("h2", parent=BASE, fontName="Helvetica-Bold", fontSize=12.5, leading=16, spaceBefore=10,
-                    spaceAfter=2, keepWithNext=1)
+                    spaceAfter=2)
 H3 = ParagraphStyle("h3", parent=BASE, fontName="Helvetica-Bold", fontSize=10.5, leading=14, spaceBefore=6,
-                    spaceAfter=3, keepWithNext=1)
+                    spaceAfter=3)
 BOLD = ParagraphStyle("bold", parent=BASE, fontName="Helvetica-Bold")
 CELL = ParagraphStyle("cell", parent=BASE, fontSize=8.5, leading=11)
 CELL_BOLD = ParagraphStyle("cellbold", parent=CELL, fontName="Helvetica-Bold")
@@ -102,14 +104,14 @@ def indicator_table(results, kind, width):
         rows.append([
             Paragraph(f"<b>{esc(label)}</b>", ParagraphStyle("rc", parent=CELL, textColor=colors.HexColor(fg))),
             Paragraph(esc(ind["id"]), CELL_BOLD),
-            Paragraph(esc(ind.get("name", "")), CELL),
+            Paragraph(esc(score.short_name(ind)), CELL),
             Paragraph(esc(r.get("display", "")) or "-", CELL),
             Paragraph(esc(score.fmt(ind["amber"], unit)), CELL),
             Paragraph(esc(score.fmt(ind["red"], unit)), CELL),
             Paragraph(f"{ind['weight']:g}", CELL),
         ])
         fills.append(("BACKGROUND", (0, i), (0, i), colors.HexColor(bg)))
-    widths = [w * mm for w in (27, 10, 55, 29, 18, 17, 18)]
+    widths = [w * mm for w in (27, 10, 42, 29, 24, 24, 18)]
     scale = width / sum(widths)
     t = Table(rows, colWidths=[w * scale for w in widths], repeatRows=1)
     t.setStyle(TableStyle([
@@ -128,7 +130,18 @@ def explanation_item(r, width):
     text = (f"<b>{esc(ind['id'])}  {esc(ind.get('name', ''))}</b>"
             f"<font color='{fg}'>  <b>{esc(r['rating'])}</b> · {esc(r.get('display', ''))}</font><br/>"
             f"{esc(r.get('explanation') or r.get('note', ''))}")
-    return KeepTogether([boxed([Paragraph(text, BASE)], "#FAFAFA", width, border=fg), Spacer(1, 4)])
+    # a one-cell table never splits across pages, so no KeepTogether needed (nesting them pushes whole
+    # sections onto new pages in ReportLab 5)
+    box = boxed([Paragraph(text, BASE)], "#FAFAFA", width, border=fg)
+    box.spaceAfter = 4
+    return box
+
+
+def confidence_banner(confidence, width):
+    bg, fg = RATING_STYLE[score.CONFIDENCE_RATING[confidence["level"]]]
+    text = (f"<font color='{fg}'><b>DATA CONFIDENCE: {esc(confidence['level'].upper())}</b></font>"
+            f"   {esc(confidence['text'])}")
+    return boxed([Paragraph(text, BASE)], bg, width, border=fg)
 
 
 def footer(canvas, doc):
@@ -158,6 +171,8 @@ def build_pdf(run):
                   f"{len(d['months'][-12:])} months with trading activity · scored {date.today():%d %B %Y}",
                   SMALL),
         Spacer(1, 8),
+        confidence_banner(run["confidence"], width),
+        Spacer(1, 6),
     ]
 
     # Scores
@@ -189,21 +204,25 @@ def build_pdf(run):
                                    indicator_table(results, kind, width)]))
 
     # Plain-English summary
-    story.append(Paragraph("What the results mean", H2))
+    section_heading = [Paragraph("What the results mean", H2)]
     for kind, title, _ in KINDS:
         mine = [r for r in results if r["ind"]["score"] == kind]
         flagged = [r for rating in ("Red", "Amber") for r in mine if r["rating"] == rating]
         greens = [r for r in mine if r["rating"] == "Green"]
-        story.append(Paragraph(f"{title.split()[0]}: needs attention", H3))
-        story += [explanation_item(r, width) for r in flagged] or [Paragraph("Nothing flagged Red or Amber.", BASE)]
-        story.append(Paragraph(f"{title.split()[0]}: going well", H3))
-        story += [explanation_item(r, width) for r in greens] or [Paragraph("Nothing rated Green yet.", BASE)]
+        for label, group, empty in (("needs attention", flagged, "Nothing flagged Red or Amber."),
+                                    ("going well", greens, "Nothing rated Green yet.")):
+            items = [explanation_item(r, width) for r in group] or [Paragraph(empty, BASE)]
+            # keep the heading(s) on the same page as the first item
+            story.append(KeepTogether(section_heading + [Paragraph(f"{title.split()[0]}: {label}", H3),
+                                                         items[0]]))
+            story += items[1:]
+            section_heading = []
 
     skipped = [r for r in results if r["points"] is None]
     if skipped:
-        story.append(Paragraph("Not assessed (left out of the scores)", H3))
-        story += [Paragraph(f"<b>{esc(r['ind']['id'])}</b> {esc(r['ind'].get('name', ''))}: "
-                            f"{esc(r.get('note', ''))}", SMALL) for r in skipped]
+        lines = [Paragraph(f"<b>{esc(r['ind']['id'])}</b> {esc(r['ind'].get('name', ''))}: "
+                           f"{esc(r.get('note', ''))}", SMALL) for r in skipped]
+        story += [KeepTogether([Paragraph("Not assessed (left out of the scores)", H3), lines[0]])] + lines[1:]
 
     story += [Spacer(1, 10), Paragraph(esc(run["cfg"].get("disclaimer", "")), SMALL)]
     doc.build(story, onFirstPage=footer, onLaterPages=footer)

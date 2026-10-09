@@ -14,6 +14,13 @@ The owner is not a developer. Explain what you're doing in plain English, and **
 - **Never open, print, copy or read `.env` or `tokens.json`.** They hold secrets. The scripts load them; you don't need to see them.
 - **Environment:** Windows, Command Prompt, existing `.venv`. Run Python with `py` (for example, `py build_model.py`). Install packages into the `.venv` only.
 
+## Git
+
+- Private repo: https://github.com/lachlanjmccurry-afk/vyta (branch `main`). Commits use the GitHub noreply address (set in this repo's own git config, not globally).
+- Git and the GitHub CLI (`gh`) were installed with winget for the current user only. A shell opened before that install may need its PATH refreshed.
+- `.gitignore` excludes `.env`, `tokens.json`, anything named like a token, secret or credential, `.venv`, and all `data\` and `data_*\` folders (Xero downloads and everything made from them). **Never commit business data or secrets.** Run `git status` before every commit, and check that nothing under `data` is staged.
+- Ask before pushing.
+
 ## File map
 
 | File | Status | Purpose |
@@ -26,7 +33,7 @@ The owner is not a developer. Explain what you're doing in plain English, and **
 | `score.py` | Done | `py score.py [data folder]` (default `data`). One calculation function per indicator, listed in `CALCS`; it reuses `build_model.py` helpers. Edge-case rules (divide by zero, etc.) come from `scorecard.json`. Unpaid invoice ageing uses the "Pulled on" date in `summary.txt`. Reads `monthly_summary.csv` + `data\raw` + `scorecard.json`, rates each indicator Green/Amber/Red, works out both 0–100 scores, bands and the outcome-matrix pathway, applies the overrides, and writes `data\model\vyta_score.xlsx`. Indicators that need owner input or data Vyta doesn't have show as "Not assessed" with a reason and are left out of the score (not counted as zero) |
 
 | `wording.json` | Done | All the plain-English report text, editable by the owner: a Green ("going well + keep doing"), Amber and Red sentence per indicator, optional special-case sentences such as `red_overdrawn` or `green_no_debt` (picked by the `case=` a calc function returns), and a one-line summary for each of the 9 outcome-matrix pathways. `{placeholders}` are filled by `score.explain()` from the standard fields plus each calc's `facts`. Unknown placeholders are reported, not fatal. **Keep wording out of the code** |
-| `dashboard.py` | Done | Streamlit dashboard: `py -m streamlit run dashboard.py` (opens http://localhost:8501). The sidebar picks any folder that has `model\monthly_summary.csv`. It calls `score.compute()`, so it always matches `score.py`. It shows score cards, the pathway with its summary, traffic-light tables, explanations ("Needs attention" / "Going well" tabs) and a PDF export button. Read-only; writes no files. Check it with `streamlit.testing.v1.AppTest` (headless Edge screenshots are blocked on this machine) |
+| `dashboard.py` | Done | Streamlit dashboard: `py -m streamlit run dashboard.py` (opens http://localhost:8501). The sidebar picks any folder that has `model\monthly_summary.csv`. It calls `score.compute()`, so it always matches `score.py`. Laid out as an adviser's memo. The **Summary** tab has the verdict headline (`score.verdict`, from `wording.json` → `verdicts`), white score cards, a data confidence line, the top 3 issues (`score.top_issues`: weight × severity, Red counts double), what's working (`score.whats_working`) and the recommended pathway (`score.sentence_case`, plus the `pathways` action sentence). The **Full detail** tab has expandable HTML `<details>` rows, one per indicator. Theme, serif headings and the hidden Deploy button/menu are set in `.streamlit\config.toml`; traffic-light colours are used only on results. Read-only; writes no files. **Don't take screenshots** (blocked on this laptop; the owner checks the dashboard). Check it with `streamlit.testing.v1.AppTest`, and stop any server you start |
 | `report_pdf.py` | Done | `build_pdf(run)` → PDF bytes (ReportLab), used by the dashboard export. `py report_pdf.py [folder]` saves `<folder>\model\vyta_report.pdf`. Colours (`RATING_STYLE`, `BAND_RATING`) are shared with the dashboard |
 | `requirements.txt` | Done | Pinned packages for the `.venv` (Python 3.14) |
 | `make_test_data.py` | Done | Writes two **synthetic** 24-month businesses in Xero's JSON format to `data_healthy\raw` and `data_stressed\raw` (organisation names start with "TEST"). Never touches `data\` or Xero. Use these to check the engine scores at both ends |
@@ -35,7 +42,16 @@ The pipeline runs in order: `connect_xero.py` (once) → `pull_data.py` → `bui
 
 **Tests:** `py -m unittest test_score -v` (standard library `unittest`; pytest isn't installed). To run one test: `py -m unittest test_score.TestThresholds.test_D7`. `test_score.py` builds a small made-up business for each indicator that lands on either side of the `scorecard.json` thresholds, so the tests follow threshold edits automatically. When adding an indicator, add a builder to `BUILDERS`; `test_every_indicator_has_a_threshold_test` fails until you do. The `TestBusinesses` tests are skipped unless `data_healthy` and `data_stressed` have been built.
 
-Expected test results (as of 9 Oct 2026): healthy → Low/Strong ("Healthy"), Demo Company → High/Strong ("Restructure candidate"), stressed → High/Weak ("Likely liquidation"). If a change to the scoring moves these unexpectedly, investigate before shipping it.
+Expected results (as of 9 Oct 2026):
+- Healthy test business → Low/Strong ("Healthy"), High confidence.
+- Demo Company → High/Uncertain ("Urgent advice"), **Low** confidence (3 of 12 months active). Its V2 and V3 are not assessed because it records no cost of sales.
+- Stressed test business → High/Weak ("Likely liquidation"), High confidence.
+
+Scoring rules added 9 Oct 2026:
+- V2/V3 are "Not assessed" when cost of sales is zero (a 100% gross margin would be meaningless).
+- Data confidence is High at 12 active months, Medium at 6–11 and Low under 6. The cut-offs are in `scorecard.json` → `data_confidence`; the wording is in `wording.json` → `data_confidence`.
+- Negative ATO balances are worded as credits (`ato_balance()` in `score.py`).
+- Tables use only `short_name` labels (max 20 characters) and short `display` values or reasons (max 18 characters, enforced by `TestTableLabels`). Full names and reasons go in the explanations. If a change to the scoring moves these unexpectedly, investigate before shipping it.
 
 ## How the pieces fit together
 

@@ -284,6 +284,21 @@ class TestEdgeCases(unittest.TestCase):
         for iid in ("V3", "V6"):
             self.assertEqual(run_one(IND[iid], business(series()))["rating"], score.NOT_ASSESSED)
 
+    def test_V2_V3_no_cost_of_sales_is_not_assessed(self):
+        for iid, months in (("V2", 12), ("V3", 24)):
+            with self.subTest(indicator=iid):
+                res = run_one(IND[iid], business(series(months, cost_of_sales=0, gross_profit=10000)))
+                self.assertEqual(res["rating"], score.NOT_ASSESSED)
+                self.assertEqual(res["display"], "No cost of sales")
+                self.assertIn("no cost of sales recorded", res["note"])
+                self.assertIsNone(res["points"])
+
+    def test_V3_no_cost_of_sales_in_earlier_year_is_not_assessed(self):
+        cogs = [0] * 12 + [4000] * 12
+        res = run_one(IND["V3"], business(series(24, cost_of_sales=cogs)))
+        self.assertEqual(res["display"], "No cost of sales")
+        self.assertIn("earlier 12-month period", res["note"])
+
     def test_V4_no_gross_profit_uses_config_rule(self):
         res = run_one(IND["V4"], business(series(gross_profit=0)))
         self.assertEqual(res["rating"], IND["V4"].get("if_gross_profit_zero_or_negative", "Red"))
@@ -459,6 +474,14 @@ class TestWording(unittest.TestCase):
                 self.assertEqual(problems, [])
                 self.assertIn(phrase, text.lower())
 
+    def test_ato_credit_reads_as_credit_not_negative(self):
+        ato = [-791] * 9 + [1631, 6583, 11062]
+        res, text, problems = self.explain(IND["D4"], business(series(ato_liabilities=ato)))
+        self.assertEqual(res["rating"], "Red")
+        self.assertIn("from a $791 credit to $11,062 owed", text)
+        self.assertNotIn("-$", text)
+        self.assertIn("$791 credit", res["note"])
+
     def test_green_gets_a_going_well_sentence(self):
         res, text, problems = self.explain(IND["D13"], BUILDERS["D13"](0.1, IND["D13"]))
         self.assertEqual(res["rating"], "Green")
@@ -481,7 +504,109 @@ class TestWording(unittest.TestCase):
         self.assertEqual(text, f"{IND['D13']['name']} is 2.00.")
 
 
-# ---------- 6. the synthetic test businesses ----------
+class TestMemo(unittest.TestCase):
+    """The dashboard memo: verdict headline, top 3 issues, what's working, pathway in sentence case."""
+
+    def test_every_pathway_has_a_verdict(self):
+        for distress in (b["band"] for b in CFG["bands"]["distress"]):
+            for viability in (b["band"] for b in CFG["bands"]["viability"]):
+                with self.subTest(distress=distress, viability=viability):
+                    text = score.verdict(WORDING, {"distress": distress, "viability": viability}, "Acme Pty Ltd")
+                    self.assertTrue(text.startswith("Acme Pty Ltd "))
+                    self.assertNotIn("{", text)
+
+    def test_verdict_without_enough_data(self):
+        text = score.verdict(WORDING, {"distress": "Not enough data", "viability": "Strong"}, "Acme")
+        self.assertIn("Acme", text)
+
+    def test_sentence_case_keeps_acronyms(self):
+        self.assertEqual(score.sentence_case("RESTRUCTURE CANDIDATE: SBR, VA or safe harbour."),
+                         "Restructure candidate: SBR, VA or safe harbour.")
+        self.assertEqual(score.sentence_case("Healthy. Monitor quarterly."), "Healthy. Monitor quarterly.")
+
+    def result(self, iid, weight, rating):
+        return {"ind": {"id": iid, "weight": weight}, "rating": rating}
+
+    def test_top_issues_weigh_red_above_amber(self):
+        results = [self.result("A", 15, "Amber"), self.result("B", 12, "Red"), self.result("C", 10, "Red"),
+                   self.result("D", 10, "Red"), self.result("E", 20, "Green"), self.result("F", 30, "Not assessed")]
+        self.assertEqual([r["ind"]["id"] for r in score.top_issues(results)], ["B", "C", "D"])
+
+    def test_top_issues_with_fewer_than_three(self):
+        self.assertEqual(len(score.top_issues([self.result("A", 5, "Amber")])), 1)
+        self.assertEqual(score.top_issues([self.result("A", 5, "Green")]), [])
+
+    def test_whats_working_is_heaviest_greens(self):
+        results = [self.result("A", 5, "Green"), self.result("B", 20, "Green"), self.result("C", 10, "Green"),
+                   self.result("D", 7, "Green"), self.result("E", 50, "Red")]
+        self.assertEqual([r["ind"]["id"] for r in score.whats_working(results)], ["B", "C", "D"])
+
+
+# ---------- 6. data confidence and table labels ----------
+
+TABLE_LABEL_MAX = 20     # longest short indicator name allowed in tables
+TABLE_VALUE_MAX = 18     # longest value / reason label allowed in tables
+
+
+class TestConfidence(unittest.TestCase):
+
+    def level(self, active):
+        d = business(series(has_activity=[False] * (12 - active) + [True] * active))
+        return score.data_confidence(d, CFG, WORDING)
+
+    def test_levels_follow_config_cut_offs(self):
+        high = CFG["data_confidence"]["high_from_months"]
+        medium = CFG["data_confidence"]["medium_from_months"]
+        for active, expected in ((0, "Low"), (medium - 1, "Low"), (medium, "Medium"),
+                                 (high - 1, "Medium"), (high, "High")):
+            with self.subTest(months=active):
+                self.assertEqual(self.level(active)["level"], expected)
+
+    def test_under_6_months_is_low(self):
+        for active in range(6):
+            self.assertEqual(self.level(active)["level"], "Low")
+
+    def test_confidence_sentence_fills_in(self):
+        conf = self.level(3)
+        self.assertIn("Only 3 of 12 months", conf["text"])
+        self.assertNotIn("{", conf["text"])
+
+
+class TestTableLabels(unittest.TestCase):
+    """Tables show short labels only, so nothing gets cut off. Full text lives in the explanations."""
+
+    def all_results(self):
+        out = []
+        for iid, build in BUILDERS.items():
+            ind = dict(IND[iid], approved_limit_dollars=100000) if iid == "D6" else IND[iid]
+            for target, _ in threshold_cases(ind):
+                d = build(target, ind)
+                if d is not None:
+                    out.append(run_one(ind, d))
+        edge_cases = [business(series(cash=-500)), business(series(current_liabilities=0)),
+                      business(series(total_assets=0)), business(series(gross_profit=0)),
+                      business(series(cost_of_sales=0)), business(series(revenue=0))]
+        for d in edge_cases:
+            out += score.assess(d, CFG)
+        for folder in ("data", "data_healthy", "data_stressed"):
+            if (Path(folder) / "model" / "monthly_summary.csv").exists():
+                out += score.assess(score.load_data(Path(folder), CFG), CFG)
+        return out
+
+    def test_short_names_fit(self):
+        for ind in CFG["indicators"]:
+            with self.subTest(indicator=ind["id"]):
+                self.assertIn("short_name", ind)
+                self.assertLessEqual(len(score.short_name(ind)), TABLE_LABEL_MAX)
+
+    def test_values_and_reasons_fit(self):
+        for r in self.all_results():
+            with self.subTest(indicator=r["ind"]["id"], display=r.get("display")):
+                self.assertTrue(r.get("display"), "every result needs a table value or short reason")
+                self.assertLessEqual(len(r["display"]), TABLE_VALUE_MAX)
+
+
+# ---------- 7. the synthetic test businesses ----------
 
 class TestBusinesses(unittest.TestCase):
 

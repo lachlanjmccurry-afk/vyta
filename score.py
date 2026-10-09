@@ -42,6 +42,7 @@ FILLS = {
     OWNER_QUESTION: PatternFill("solid", start_color="E7E6E6"),
 }
 WRAP = Alignment(wrap_text=True, vertical="top")
+CONFIDENCE_RATING = {"High": "Green", "Medium": "Amber", "Low": "Red"}   # colour used to show each level
 
 # Lines that count as bank debt (D5, D6) - owner/director loans are not bank debt
 LOAN_PATTERN = re.compile(r"loan|overdraft|facility|hire purchase|chattel|equipment finance|"
@@ -157,8 +158,10 @@ def forced(rating, display, note="", case=None, **facts):
     return {"rating": rating, "display": display, "note": note, "case": case, "facts": facts}
 
 
-def not_assessed(reason, owner=False):
-    return {"rating": OWNER_QUESTION if owner else NOT_ASSESSED, "display": "", "note": reason}
+def not_assessed(reason, owner=False, short=None):
+    """`reason` is the full explanation; `short` is the few-word label shown in tables."""
+    return {"rating": OWNER_QUESTION if owner else NOT_ASSESSED,
+            "display": short or ("Owner input" if owner else "No data"), "note": reason}
 
 
 def last12(d, key):
@@ -209,7 +212,7 @@ def unpaid_invoices(d, kind, days=90):
 def need_history(d, n):
     if len(d["months"]) < n:
         return not_assessed(f"Needs {n} months of history (have {len(d['months'])}). "
-                            "pull_data.py currently pulls 12 months.")
+                            "pull_data.py currently pulls 12 months.", short=f"Needs {n} months")
     return None
 
 
@@ -218,7 +221,7 @@ def need_history(d, n):
 def d1_current_ratio(d, ind):
     m = d["months"][-1]
     if m["current_liabilities"] <= 0:
-        return forced("Green", "No current liabilities", case="no_liabilities")
+        return forced("Green", "No debts due", case="no_liabilities")
     return value(m["current_assets"] / m["current_liabilities"],
                  f"Current assets {money(m['current_assets'])} / current liabilities "
                  f"{money(m['current_liabilities'])} at {mon(m)}",
@@ -229,7 +232,7 @@ def d1_current_ratio(d, ind):
 def d2_quick_ratio(d, ind):
     m = d["months"][-1]
     if m["current_liabilities"] <= 0:
-        return forced("Green", "No current liabilities", case="no_liabilities")
+        return forced("Green", "No debts due", case="no_liabilities")
     return value((m["cash"] + m["debtors"]) / m["current_liabilities"],
                  f"(Cash {money(m['cash'])} + debtors {money(m['debtors'])}) / current liabilities "
                  f"{money(m['current_liabilities'])}",
@@ -241,7 +244,7 @@ def d3_cash_runway(d, ind):
     lb = ind.get("lookback_months", 3)
     ms = d["months"]
     if len(ms) < lb + 1:
-        return not_assessed(f"Needs {lb + 1} month-end cash balances")
+        return not_assessed(f"Needs {lb + 1} month-end cash balances", short="Needs history")
     cash, before = ms[-1]["cash"], ms[-1 - lb]["cash"]
     outflow = (before - cash) / lb
     trend = f"falling {money(outflow)}/month" if outflow > 0 else f"rising {money(-outflow)}/month"
@@ -251,10 +254,10 @@ def d3_cash_runway(d, ind):
     facts = dict(cash=money(cash), cash_before=money(before), month=mon(ms[-1]), month_before=mon(ms[-1 - lb]),
                  monthly_outflow=money(outflow))
     if cash <= 0:
-        return forced(ind.get("if_cash_zero_or_negative", "Red"), "No cash / overdrawn", note, case="overdrawn",
+        return forced(ind.get("if_cash_zero_or_negative", "Red"), "Overdrawn", note, case="overdrawn",
                       **facts)
     if outflow <= 0:
-        return forced(ind.get("if_cash_not_falling", "Green"), "Cash not falling", note, case="not_falling",
+        return forced(ind.get("if_cash_not_falling", "Green"), "Not falling", note, case="not_falling",
                       **facts)
     return value(cash / outflow, note, **facts)
 
@@ -268,24 +271,32 @@ def d4_ato_rising(d, ind):
             count += 1
         else:
             break
-    trail = ", ".join(f"{mon(m)} {money(m['ato_liabilities'])}" for m in ms[-4:])
+    trail = ", ".join(f"{mon(m)} {ato_balance(m['ato_liabilities'])}" for m in ms[-4:])
     start = ms[-1 - count]["ato_liabilities"]
     now = ms[-1]["ato_liabilities"]
     return value(count, f"ATO balance at month-end: {trail}",
-                 ato_start=money(start), ato_now=money(now), ato_increase=money(now - start), month=mon(ms[-1]))
+                 ato_start=ato_balance(start, article=True), ato_now=ato_balance(now, article=True),
+                 ato_increase=money(now - start), month=mon(ms[-1]))
+
+
+def ato_balance(x, article=False):
+    """ATO liabilities in words: a negative balance means the ATO owes the business (a credit)."""
+    if x < 0:
+        return f"{'a ' if article else ''}{money(-x)} credit"
+    return f"{money(x)} owed"
 
 
 def d5_bank_debt_growth(d, ind):
     lb = ind.get("lookback_months", 6)
     ms = d["months"]
     if len(ms) < lb + 1:
-        return not_assessed(f"Needs {lb + 1} months of balances")
+        return not_assessed(f"Needs {lb + 1} months of balances", short="Needs history")
     now, then = sum(bank_debt(d, ms[-1]["month"])), sum(bank_debt(d, ms[-1 - lb]["month"]))
     note = f"Loans + overdraft {money(then)} at {mon(ms[-1 - lb])} -> {money(now)} at {mon(ms[-1])}"
     facts = dict(debt_before=money(then), debt_now=money(now), month_before=mon(ms[-1 - lb]), month=mon(ms[-1]))
     if then <= 0:
         if now > 0:
-            return forced(ind.get("if_no_debt_before_but_debt_now", "Red"), "New bank debt", note, case="new_debt",
+            return forced(ind.get("if_no_debt_before_but_debt_now", "Red"), "New debt", note, case="new_debt",
                           **facts)
         return forced("Green", "No bank debt", note, case="no_debt", **facts)
     return value((now - then) / then, note, **facts)
@@ -295,7 +306,7 @@ def d6_facility_utilisation(d, ind):
     limit = ind.get("approved_limit_dollars")
     if not limit:
         return not_assessed("Needs the approved overdraft/facility limit - add it to scorecard.json "
-                            "(approved_limit_dollars)", owner=True)
+                            "(approved_limit_dollars)", owner=True, short="Needs limit")
     overdraft, _ = bank_debt(d, d["months"][-1]["month"])
     return value(overdraft / limit, f"Overdraft drawn {money(overdraft)} / approved limit {money(limit)}",
                  overdraft=money(overdraft), limit=money(limit))
@@ -304,10 +315,10 @@ def d6_facility_utilisation(d, ind):
 def d7_creditor_days(d, ind):
     active = active_months(d)
     if not active:
-        return not_assessed("No trading activity in the last 12 months")
+        return not_assessed("No trading activity in the last 12 months", short="No activity")
     costs = sum(m["cost_of_sales"] + m["operating_expenses"] for m in active) * 12 / len(active)
     if costs <= 0:
-        return not_assessed("No expenses recorded")
+        return not_assessed("No expenses recorded", short="No expenses")
     creditors = d["months"][-1]["creditors"]
     return value(creditors / costs * 365,
                  f"Trade creditors {money(creditors)} / yearly costs {money(costs)} "
@@ -318,7 +329,7 @@ def d7_creditor_days(d, ind):
 def overdue_share(d, kind, label):
     total, over = unpaid_invoices(d, kind)
     if total <= 0:
-        return forced("Green", f"No unpaid {label}", case="nothing_unpaid")
+        return forced("Green", "None unpaid", f"No unpaid {label}", case="nothing_unpaid")
     return value(over / total, f"{money(over)} of {money(total)} unpaid {label} is >90 days past due "
                                f"(as at {d['as_at']:%d %b %Y})",
                  case="none_overdue" if over == 0 else None, overdue_90=money(over), total_unpaid=money(total), as_at=f"{d['as_at']:%d %b %Y}")
@@ -332,10 +343,11 @@ def d9_debtor_days_trend(d, ind):
     lb = ind.get("lookback_months", 3)
     ms = d["months"]
     if len(ms) < lb + 1:
-        return not_assessed(f"Needs {lb + 1} months of balances")
+        return not_assessed(f"Needs {lb + 1} months of balances", short="Needs history")
     now, then = ms[-1], ms[-1 - lb]
     if now["revenue"] <= 0 or then["revenue"] <= 0:
-        return not_assessed(f"Needs revenue in both {mon(then)} and {mon(now)} to work out debtor days")
+        return not_assessed(f"Needs revenue in both {mon(then)} and {mon(now)} to work out debtor days",
+                            short="Needs revenue")
     dd_now = now["debtors"] / (now["revenue"] * 12) * 365
     dd_then = then["debtors"] / (then["revenue"] * 12) * 365
     return value(dd_now - dd_then, f"Debtor days {dd_then:.0f} at {mon(then)} -> {dd_now:.0f} at {mon(now)}",
@@ -369,7 +381,7 @@ def d12_operating_cash_flow(d, ind):
                        + (last["ato_liabilities"] - first["ato_liabilities"]))
     ocf = profit + dep + working_capital
     if last["current_liabilities"] <= 0:
-        return forced("Green", "No current liabilities", case="no_liabilities")
+        return forced("Green", "No debts due", case="no_liabilities")
     return value(ocf / last["current_liabilities"],
                  f"Estimated operating cash flow {money(ocf)} (profit {money(profit)} + depreciation {money(dep)} "
                  f"+ working capital {money(working_capital)}) / current liabilities "
@@ -400,25 +412,37 @@ def v1_equity_ratio(d, ind):
                  f"Net assets {money(m['net_assets'])} / total assets {money(m['total_assets'])}", **facts)
 
 
+def no_cost_of_sales(months, period="the last 12 months"):
+    """Gross margin means nothing without cost of sales (it would show a meaningless 100%), so don't score it."""
+    if sum(m["cost_of_sales"] for m in months) <= 0:
+        return not_assessed(f"Not assessed - no cost of sales recorded in {period}, so gross margin "
+                            "can't be measured. Check whether direct costs are being coded to cost of sales "
+                            "in Xero.", short="No cost of sales")
+    return None
+
+
 def v2_gross_margin(d, ind):
     revenue = last12(d, "revenue")
     if revenue <= 0:
-        return not_assessed("No revenue in the last 12 months")
+        return not_assessed("No revenue in the last 12 months", short="No revenue")
+    missing = no_cost_of_sales(d["months"][-12:])
+    if missing:
+        return missing
     gp = last12(d, "gross_profit")
-    note = f"Gross profit {money(gp)} / revenue {money(revenue)} (last 12 months)"
-    if last12(d, "cost_of_sales") == 0:
-        note += ". No cost of sales recorded, so gross margin is 100%"
-    return value(gp / revenue, note, gross_profit=money(gp), revenue=money(revenue))
+    return value(gp / revenue, f"Gross profit {money(gp)} / revenue {money(revenue)} (last 12 months)",
+                 gross_profit=money(gp), revenue=money(revenue))
 
 
 def v3_gross_margin_trend(d, ind):
-    missing = need_history(d, ind.get("needs_history_months", 24))
+    missing = (no_cost_of_sales(d["months"][-12:])
+               or need_history(d, ind.get("needs_history_months", 24))
+               or no_cost_of_sales(d["months"][-24:-12], "the earlier 12-month period"))
     if missing:
         return missing
     now, before = d["months"][-12:], d["months"][-24:-12]
     rev_now, rev_before = sum(m["revenue"] for m in now), sum(m["revenue"] for m in before)
     if rev_now <= 0 or rev_before <= 0:
-        return not_assessed("Needs revenue in both 12-month periods")
+        return not_assessed("Needs revenue in both 12-month periods", short="Needs revenue")
     gm_now = sum(m["gross_profit"] for m in now) / rev_now
     gm_before = sum(m["gross_profit"] for m in before) / rev_before
     return value(gm_now - gm_before, f"Gross margin {gm_before:.1%} -> {gm_now:.1%}",
@@ -438,7 +462,7 @@ def v4_overhead_to_gp(d, ind):
 def v5_underlying_margin(d, ind):
     revenue = last12(d, "revenue")
     if revenue <= 0:
-        return not_assessed("No revenue in the last 12 months")
+        return not_assessed("No revenue in the last 12 months", short="No revenue")
     profit = last12(d, "net_profit")
     interest = pl_lines(d, d["interest_pattern"])
     dep = pl_lines(d, d["depreciation_pattern"])
@@ -459,13 +483,14 @@ def v6_revenue_trend(d, ind):
     now = sum(m["revenue"] for m in d["months"][-12:])
     before = sum(m["revenue"] for m in d["months"][-24:-12])
     if before <= 0:
-        return not_assessed("No revenue in the earlier 12-month period")
+        return not_assessed("No revenue in the earlier 12-month period", short="Needs revenue")
     return value((now - before) / before, f"Revenue {money(before)} -> {money(now)}",
                  revenue_before=money(before), revenue_now=money(now))
 
 
 def v7_pipeline(d, ind):
-    return not_assessed("Needs Xero Quotes - not pulled yet (would need an extra read-only Xero permission)")
+    return not_assessed("Needs Xero Quotes - not pulled yet (would need an extra read-only Xero permission)",
+                        short="Needs quotes")
 
 
 def v8_long_term_cover(d, ind):
@@ -475,7 +500,7 @@ def v8_long_term_cover(d, ind):
     note = f"Non-current assets {money(nca)} / non-current liabilities {money(ncl)}"
     facts = dict(nca=money(nca), ncl=money(ncl))
     if ncl <= 0:
-        return forced(ind.get("if_no_long_term_liabilities", "Green"), "No long-term liabilities", note,
+        return forced(ind.get("if_no_long_term_liabilities", "Green"), "No long-term debt", note,
                       case="no_long_term_liabilities", **facts)
     return value(nca / ncl, note, **facts)
 
@@ -506,7 +531,8 @@ def assess(d, cfg):
         if not ind.get("enabled", True):
             continue
         calc = CALCS.get(ind["id"])
-        res = calc(d, ind) if calc else not_assessed("No calculation written for this indicator yet")
+        res = calc(d, ind) if calc else not_assessed("No calculation written for this indicator yet",
+                                                     short="Not built")
         unit = ind.get("unit", "ratio")
         if "value" in res:
             res["rating"] = rate(res["value"], ind)
@@ -612,9 +638,61 @@ def pathway_summary(wording, bands):
             or wording.get("pathway_not_enough_data", ""))
 
 
+def data_confidence(d, cfg, wording):
+    """High / Medium / Low, from how many of the last 12 months had trading activity (cut-offs in scorecard.json)."""
+    settings = cfg.get("data_confidence", {})
+    months, of = len(active_months(d)), len(d["months"][-12:])
+    if months >= settings.get("high_from_months", 12):
+        level = "High"
+    elif months >= settings.get("medium_from_months", 6):
+        level = "Medium"
+    else:
+        level = "Low"
+    text = wording.get("data_confidence", {}).get(level, "")
+    try:
+        text = text.format(months=months, of=of)
+    except (KeyError, ValueError, IndexError):
+        pass
+    return {"level": level, "months": months, "of": of, "text": text}
+
+
+def verdict(wording, bands, org):
+    """One-sentence headline describing the business's situation, from the outcome pathway (wording.json)."""
+    text = (wording.get("verdicts", {}).get(bands["distress"], {}).get(bands["viability"])
+            or wording.get("verdict_not_enough_data", ""))
+    return text.replace("{org}", org)
+
+
+def sentence_case(text):
+    """'RESTRUCTURE CANDIDATE: SBR, VA...' -> 'Restructure candidate: SBR, VA...' (short acronyms are kept)."""
+    words = [w.lower() if w.isupper() and len(w.strip(".,:;()")) > 3 else w for w in text.split(" ")]
+    out = " ".join(words)
+    return out[:1].upper() + out[1:]
+
+
+SEVERITY = {"Red": 2, "Amber": 1}
+
+
+def top_issues(results, n=3):
+    """The Red/Amber indicators with the most weight behind them: weight x severity (Red counts double),
+    so a heavily weighted Red comes first. Ties go to the higher weight, then ID order."""
+    flagged = [r for r in results if r["rating"] in SEVERITY]
+    return sorted(flagged, key=lambda r: (-r["ind"]["weight"] * SEVERITY[r["rating"]], -r["ind"]["weight"]))[:n]
+
+
+def whats_working(results, n=3):
+    """The most heavily weighted Green indicators."""
+    return sorted((r for r in results if r["rating"] == "Green"), key=lambda r: -r["ind"]["weight"])[:n]
+
+
+def short_name(ind):
+    """The short label used in tables (full name goes in the explanations)."""
+    return ind.get("short_name") or ind.get("name") or ind["id"]
+
+
 # ---------- Excel output ----------
 
-def write_report_sheet(ws, d, cfg, results, scores, bands, pathway, summary):
+def write_report_sheet(ws, d, cfg, results, scores, bands, pathway, summary, confidence):
     """The plain-English page: overall result, then each Red/Amber indicator with its explanation underneath."""
     ws.title = "Report"
 
@@ -636,6 +714,8 @@ def write_report_sheet(ws, d, cfg, results, scores, bands, pathway, summary):
     add(f"Vyta report: {d['org']}", Font(name="Arial", size=14, bold=True))
     add(f"12 months ending {d['months'][-1]['month']:%d %B %Y}. Scored on {date.today():%d %B %Y}.")
     add()
+    add(f"DATA CONFIDENCE: {confidence['level'].upper()}. {confidence['text']}", BOLD,
+        FILLS[CONFIDENCE_RATING[confidence["level"]]])
     add(f"{score_text('distress')}     |     {score_text('viability')}", BOLD)
     add(pathway, BOLD)
     if summary:
@@ -671,11 +751,11 @@ def write_report_sheet(ws, d, cfg, results, scores, bands, pathway, summary):
     set_widths(ws, [120])
 
 
-def write_workbook(path, d, cfg, results, scores, bands, override_notes, pathway, summary):
+def write_workbook(path, d, cfg, results, scores, bands, override_notes, pathway, summary, confidence):
     wb = Workbook()
     ms = d["months"]
 
-    write_report_sheet(wb.active, d, cfg, results, scores, bands, pathway, summary)
+    write_report_sheet(wb.active, d, cfg, results, scores, bands, pathway, summary, confidence)
 
     # Sheet 2: Summary
     ws = wb.create_sheet("Summary")
@@ -684,6 +764,7 @@ def write_workbook(path, d, cfg, results, scores, bands, override_notes, pathway
         ("Organisation", d["org"]),
         ("Period", f"12 months ending {ms[-1]['month']:%d %b %Y}"),
         ("Months with activity", f"{len(active_months(d))} of {len(ms[-12:])}"),
+        ("Data confidence", f"{confidence['level']}. {confidence['text']}"),
         ("Unpaid invoices as at", f"{d['as_at']:%d %b %Y}"),
         ("Scored on", date.today().strftime("%d %b %Y")),
         ("", ""),
@@ -782,6 +863,7 @@ def compute(base):
                                                                           "Not enough data for a pathway")
     return {"base": base, "d": d, "cfg": cfg, "results": results, "scores": scores, "bands": bands,
             "override_notes": override_notes, "pathway": pathway, "summary": pathway_summary(wording, bands),
+            "confidence": data_confidence(d, cfg, wording), "verdict": verdict(wording, bands, d["org"]),
             "problems": list(dict.fromkeys(problems))}
 
 
@@ -791,17 +873,19 @@ def main():
     d, cfg, results, scores, bands = run["d"], run["cfg"], run["results"], run["scores"], run["bands"]
     override_notes, pathway, summary, problems = (run["override_notes"], run["pathway"], run["summary"],
                                                   run["problems"])
+    confidence = run["confidence"]
 
     out = base / "model" / "vyta_score.xlsx"
     try:
-        write_workbook(out, d, cfg, results, scores, bands, override_notes, pathway, summary)
+        write_workbook(out, d, cfg, results, scores, bands, override_notes, pathway, summary, confidence)
     except PermissionError:
         stop("vyta_score.xlsx is open in Excel. Close it and run again.")
 
     # Terminal summary
     print(f"Organisation: {d['org']}   (data folder: {base})")
     print(f"Period:       12 months ending {d['months'][-1]['month']:%d %b %Y} "
-          f"- {len(active_months(d))} month(s) with activity\n")
+          f"- {len(active_months(d))} month(s) with activity")
+    print(f"Data confidence: {confidence['level'].upper()}  {confidence['text']}\n")
     for r in results:
         ind = r["ind"]
         print(f"  {ind['id']:<4} {ind.get('name', '')[:36]:<36} {r['rating']:<30} {r.get('display', '')}")

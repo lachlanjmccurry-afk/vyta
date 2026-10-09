@@ -1,0 +1,20 @@
+# Vyta dashboard look and behaviour (read by  py -m streamlit run dashboard.py)
+
+[client]
+# Hide Streamlit's Deploy button and developer menu
+toolbarMode = "minimal"
+showSidebarNavigation = false
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"
+# Restrained navy / warm-grey palette. Traffic-light colours are used only on results (set in dashboard.py).
+primaryColor = "#1F3864"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F3EF"
+textColor = "#2B2B2B"
+borderColor = "#E4E0DA"
+headingFont = "Georgia, 'Times New Roman', serif"
+baseRadius = "6px"
