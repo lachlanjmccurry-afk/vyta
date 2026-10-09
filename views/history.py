@@ -12,7 +12,7 @@ run = ui.current_run()
 text = ui.wording().get("history_page", {})
 snaps = snapshots.load(run["base"])
 
-ui.masthead(run, text.get("title", "History"))
+ui.page_head(text.get("title", "History"), text.get("heading", "History"))
 md(f"<div class='vy-sub'>{esc(text.get('intro', ''))}</div>")
 
 if not snaps:

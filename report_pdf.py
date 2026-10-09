@@ -26,10 +26,10 @@ import score
 
 # (background, text) colours shared with the dashboard
 RATING_STYLE = {
-    "Red": ("#F8D0D0", "#9C0006"),
-    "Amber": ("#FFE9A8", "#7A5A00"),
-    "Green": ("#D5EBC5", "#2F5A1B"),
-    "Not assessed": ("#ECECEC", "#555555"),
+    "Red": ("#FDE4E1", "#B42318"),
+    "Amber": ("#FEF0C7", "#B54708"),
+    "Green": ("#DCF5E7", "#067647"),
+    "Not assessed": ("#EEF0F3", "#4B5563"),
 }
 BAND_RATING = {"Low": "Green", "Moderate": "Amber", "High": "Red",
                "Strong": "Green", "Uncertain": "Amber", "Weak": "Red"}

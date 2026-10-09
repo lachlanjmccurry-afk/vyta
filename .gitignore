@@ -31,3 +31,6 @@ desktop.ini
 
 # Claude Code personal settings
 .claude/settings.local.json
+
+# Design mock-up screenshots (show business figures)
+Screenshot*.png

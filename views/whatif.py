@@ -51,7 +51,7 @@ for key, *_ in SLIDERS:                       # starting values live only in ses
     st.session_state.setdefault(f"wi_{key}", 0)
 st.session_state.setdefault("wi_ato_plan", False)
 
-ui.masthead(run, "What if?")
+ui.page_head("What if?", text.get("heading", "What if?"))
 md(f"<div class='vy-sub'>{esc(text.get('intro', ''))}</div>")
 
 with st.container(border=True, key="wi-levers"):
@@ -64,7 +64,7 @@ with st.container(border=True, key="wi-levers"):
     with cols[len(SLIDERS) % 3]:
         levers["ato_plan"] = st.toggle("ATO payment plan", key="wi_ato_plan",
                                        help="Spread the current ATO debt over 12 monthly instalments")
-        st.button("Reset", on_click=reset, type="tertiary", icon=":material/restart_alt:")
+        st.button("Reset", on_click=reset, type="tertiary", icon=":material/restart_alt:", key="wi_reset")
 
 after = whatif.run(run, levers)
 

@@ -233,6 +233,7 @@
 
   "_whatif_page_help": "Dashboard What if? page. {levers} = the lever phrases joined with commas and 'and'; {d_before}/{d_after} = distress bands, {v_before}/{v_after} = viability bands. The sentence is given a capital letter automatically.",
   "whatif_page": {
+    "heading": "See how a change would move the scores",
     "intro": "Try changes to the business and see how the scores would move. Nothing here changes the real scores or the data.",
     "levers": {
       "price": "raising prices by {pct}",
@@ -256,6 +257,7 @@
 
   "_owner_questions_page_help": "Dashboard Owner questions page. Answers are entered in scorecard.json (the \"answer\" field of each question).",
   "owner_questions_page": {
+    "heading": "What only the owner can tell us",
     "intro": "Some things can't be read from Xero. These answers sharpen the scores; until they're in, the related checks stay out of the scores.",
     "how_to_answer": "To record an answer, add it to the \"answer\" field of the question in scorecard.json, then refresh this page.",
     "not_answered": "Not answered yet",
@@ -267,6 +269,7 @@
   "_history_page_help": "Dashboard History page (snapshots saved by sync.py). Placeholders: {date} in 'one'; {before} and {after} (the two snapshot dates) in 'changes_sub' and 'changes_none'.",
   "history_page": {
     "title": "History",
+    "heading": "How the scores have moved",
     "intro": "Each time the data is refreshed, Vyta saves both scores and every indicator's result. This page shows how they have moved.",
     "none": "No history yet. A snapshot is saved each time the data is refreshed: press Refresh now, or wait for the daily 7am update.",
     "one": "One snapshot so far, from {date}. The charts and the list of changes start once there are two.",
@@ -281,7 +284,7 @@
     "snapshots_title": "Every snapshot"
   },
 
-  "_refresh_help": "The Last updated line and Refresh now button in the dashboard sidebar.",
+  "_refresh_help": "The Last updated line and Refresh now button in the dashboard's top bar.",
   "refresh": {
     "last_updated": "Last updated",
     "never": "Not refreshed yet",
@@ -289,5 +292,98 @@
     "help_xero": "Pulls the latest figures from Xero (read-only), rebuilds and re-scores. Takes about a minute.",
     "help_offline": "Rebuilds and re-scores this test business from its saved files. Xero isn't contacted.",
     "running": "Refreshing - this takes about a minute..."
+  },
+
+  "_pathway_labels_help": "Short name for each pathway (distress band, then viability band), shown on the Overview banner and the Get help page.",
+  "pathway_labels": {
+    "Low": {"Strong": "Healthy", "Uncertain": "Performance review", "Weak": "Structural concern"},
+    "Moderate": {"Strong": "Early intervention", "Uncertain": "Turnaround review", "Weak": "Restructure or exit"},
+    "High": {"Strong": "Restructure candidate", "Uncertain": "Urgent advice", "Weak": "Likely liquidation"}
+  },
+  "pathway_label_not_enough_data": "Not enough data",
+
+  "_shell_help": "The parts shown on every page: sidebar, top bar. {end} is the last month-end.",
+  "shell": {
+    "more": "More tools",
+    "connected_title": "Connected to Xero",
+    "connected_text": "Read-only. Vyta never changes your books.",
+    "sample_title": "Sample data",
+    "sample_text": "A made-up test business. Not connected to Xero.",
+    "period": "12 months to {end}",
+    "synced_xero": "Synced daily from Xero",
+    "synced_sample": "Sample data",
+    "export": "Export PDF",
+    "get_listed": "Are you an adviser? Get listed"
+  },
+
+  "_overview_page_help": "Dashboard Overview page. {count} in issues_link is the number of indicators.",
+  "overview_page": {
+    "eyebrow": "Overview",
+    "confidence": {"High": "High data confidence.", "Medium": "Medium data confidence.", "Low": "Low data confidence."},
+    "distress_question": "How serious is it?",
+    "distress_sub": "Distress score · higher is worse",
+    "viability_question": "Is there a business worth saving?",
+    "viability_sub": "Viability score · higher is better",
+    "pathway_eyebrow": "Recommended pathway",
+    "pathway_button": "See matched advisers",
+    "issues_title": "Top 3 issues",
+    "issues_link": "All {count} indicators",
+    "issues_none": "No indicators are flagged Red or Amber.",
+    "working_title": "What's working",
+    "working_none": "Nothing is rated Green yet.",
+    "override": "Statutory demand override:",
+    "footer": "Indicative early-warning signals based on Xero data, not an insolvency determination or professional advice."
+  },
+
+  "_details_page_help": "Dashboard Details page. 'figures' maps a column of monthly_summary.csv to its label (shown in this order). {date} is the last month-end.",
+  "details_page": {
+    "eyebrow": "Details",
+    "title": "The numbers behind the scores",
+    "intro": "Every indicator, what it measured and where it sits against its warning levels. Select a row to see what it means.",
+    "figures_note": "Month-end balances at {date}.",
+    "figures": {
+      "current_liabilities": "Short-term debts",
+      "current_assets": "Short-term assets",
+      "cash": "Bank balance",
+      "ato_liabilities": "Owed to the ATO",
+      "debtors": "Owed by customers",
+      "creditors": "Unpaid supplier bills"
+    },
+    "tabs": {"distress": "Distress", "viability": "Viability"},
+    "questions": {
+      "distress": "How much financial trouble is the business in right now?",
+      "viability": "If the cash problem were fixed, would the business make money?"
+    },
+    "columns": ["ID", "Indicator", "Value", "Warning levels", "Result"],
+    "trend_title": "Last 12 months",
+    "figures_title": "Figures used",
+    "how": "How it's calculated:",
+    "weight": "Weight in the score: {weight}",
+    "no_trend": "No trend: {reason}."
+  },
+
+  "_help_page_help": "Dashboard Get help page. The firms themselves are in firms.json. {date} etc. are not used here.",
+  "help_page": {
+    "eyebrow": "Get help",
+    "title": "Advisers matched to where your business is",
+    "intro": "Matched on your pathway and what your results show, with advisers in your state listed first. You choose who to contact. Vyta never shares your data or scores.",
+    "your_pathway": "Your pathway",
+    "all": "All matches",
+    "partner": "Listed partner",
+    "why": "Why matched:",
+    "helps": "Helps with",
+    "location": "Location",
+    "contact": "Contact",
+    "profile": "View profile",
+    "none": "No listed advisers of this type match your pathway yet.",
+    "how_title": "How listings work",
+    "how_text": "Listed partners pay a flat fee to appear here. Vyta takes no commission on appointments. Registered liquidators are checked against ASIC's register before listing.",
+    "adviser_title": "Are you an adviser?",
+    "adviser_text": "Reach businesses that need your help, early. Listings are reviewed against our criteria before going live.",
+    "apply": "Apply to be listed",
+    "apply_text": "Adviser listings aren't open yet. This page shows how they will look.",
+    "sample_note": "This is a fictional sample listing. The details are placeholders and don't belong to a real firm.",
+    "privacy_note": "Vyta doesn't send your data or scores to anyone. You decide what to share when you get in touch.",
+    "footer": "Sample listings shown are fictional, for design purposes only. Listings are general information, not a recommendation or professional advice."
   }
 }

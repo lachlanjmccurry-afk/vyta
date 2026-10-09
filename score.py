@@ -638,6 +638,12 @@ def pathway_summary(wording, bands):
             or wording.get("pathway_not_enough_data", ""))
 
 
+def pathway_label(wording, bands):
+    """Short name for the pathway, e.g. 'Restructure candidate' (wording.json -> pathway_labels)."""
+    return (wording.get("pathway_labels", {}).get(bands["distress"], {}).get(bands["viability"])
+            or wording.get("pathway_label_not_enough_data", "Not enough data"))
+
+
 def data_confidence(d, cfg, wording):
     """High / Medium / Low, from how many of the last 12 months had trading activity (cut-offs in scorecard.json)."""
     settings = cfg.get("data_confidence", {})
@@ -869,6 +875,7 @@ def score_data(d, cfg, wording):
                                                                           "Not enough data for a pathway")
     return {"base": base, "d": d, "cfg": cfg, "results": results, "scores": scores, "bands": bands,
             "override_notes": override_notes, "pathway": pathway, "summary": pathway_summary(wording, bands),
+            "pathway_label": pathway_label(wording, bands),
             "confidence": data_confidence(d, cfg, wording), "verdict": verdict(wording, bands, d["org"]),
             "problems": list(dict.fromkeys(problems)), "wording": wording}
 

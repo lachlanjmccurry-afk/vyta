@@ -9,7 +9,7 @@ run = ui.current_run()
 d = run["d"]
 text = ui.wording().get("cash_page", {})
 
-ui.masthead(run, text.get("title", "Where has the cash gone?"))
+ui.page_head("Cash", text.get("title", "Where has the cash gone?"))
 
 bridge = cash_bridge(d)
 if bridge is None:

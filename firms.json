@@ -1,0 +1,190 @@
+{
+  "_about": "Advisers shown on the dashboard's Get help page. ALL FIRMS BELOW ARE FICTIONAL demo listings: names, people, phone numbers (Australia's 5550 xxxx range is reserved for fiction) and email addresses (.example is reserved and never delivers) are made up.",
+  "_how_to_edit": [
+    "type: one of the keys in 'types' below (that's what the filter buttons use).",
+    "serves: which pathways the firm is shown for, as 'Distress band/Viability band' (e.g. 'High/Strong'), or 'any'.",
+    "why: reasons shown under 'Why matched', checked in order. A reason applies when every indicator listed is Red or Amber. {D5} etc. is that indicator's value; {pathway} is the pathway's short name.",
+    "why_default: used when no reason applies.",
+    "colours: [background, text] for the initials badge."
+  ],
+  "types": {
+    "liquidator": "Registered liquidators",
+    "turnaround": "Turnaround advisers",
+    "accountant": "Accountants",
+    "broker": "Finance brokers"
+  },
+  "firms": [
+    {
+      "id": "northbank",
+      "name": "Northbank Restructuring",
+      "initials": "NR",
+      "colours": ["#E8EEF6", "#1F3864"],
+      "type": "liquidator",
+      "type_label": "Registered liquidator",
+      "listed_partner": true,
+      "badge": "ASIC registered liquidator",
+      "helps_with": "Small business restructuring, voluntary administration, safe harbour",
+      "city": "Melbourne",
+      "state": "VIC",
+      "serves": ["High/Strong", "High/Uncertain", "High/Weak", "Moderate/Weak"],
+      "why": [
+        {"indicators": ["D4", "D5"], "text": "{pathway} businesses with ATO and bank debt."},
+        {"indicators": ["D4"], "text": "{pathway} businesses with growing ATO debt."}
+      ],
+      "why_default": "Advises businesses on formal restructuring options.",
+      "about": "A small team of registered liquidators who run small business restructures, voluntary administrations and safe harbour plans for directors.",
+      "contact_name": "Sample contact",
+      "phone": "(03) 5550 0101",
+      "email": "hello@northbank-restructuring.example"
+    },
+    {
+      "id": "carrow",
+      "name": "Carrow Lane Advisory",
+      "initials": "CL",
+      "colours": ["#E3F4EF", "#0E7C6B"],
+      "type": "turnaround",
+      "type_label": "Turnaround adviser",
+      "listed_partner": true,
+      "helps_with": "Cash flow plans, ATO payment arrangements, cost reduction",
+      "city": "Melbourne",
+      "state": "VIC",
+      "serves": ["High/Strong", "High/Uncertain", "Moderate/Strong", "Moderate/Uncertain", "Moderate/Weak", "Low/Weak"],
+      "why": [],
+      "why_default": "Works alongside registered practitioners on restructures.",
+      "about": "Turnaround advisers who build short-term cash flow plans, negotiate ATO payment arrangements and find cost savings.",
+      "contact_name": "Sample contact",
+      "phone": "(03) 5550 0102",
+      "email": "hello@carrowlane.example"
+    },
+    {
+      "id": "bayside",
+      "name": "Bayside Business Finance",
+      "initials": "BF",
+      "colours": ["#FCEFE3", "#B54708"],
+      "type": "broker",
+      "type_label": "Finance broker",
+      "listed_partner": true,
+      "helps_with": "Refinancing, working capital facilities",
+      "city": "Melbourne",
+      "state": "VIC",
+      "serves": ["High/Strong", "Moderate/Strong", "Moderate/Uncertain", "Low/Strong", "Low/Uncertain"],
+      "why": [
+        {"indicators": ["D5"], "text": "Bank debt has grown {D5} in six months."},
+        {"indicators": ["D6"], "text": "The bank facility is {D6} drawn."}
+      ],
+      "why_default": "Helps businesses restructure their lending.",
+      "about": "Finance brokers for small businesses: refinancing existing loans and arranging working capital facilities.",
+      "contact_name": "Sample contact",
+      "phone": "(03) 5550 0103",
+      "email": "hello@bayside-finance.example"
+    },
+    {
+      "id": "quillon",
+      "name": "Quillon Insolvency Partners",
+      "initials": "QI",
+      "colours": ["#F1E9F8", "#5B2C83"],
+      "type": "liquidator",
+      "type_label": "Registered liquidator",
+      "listed_partner": true,
+      "badge": "ASIC registered liquidator",
+      "helps_with": "Creditors' voluntary liquidation, director advice, sale of business",
+      "city": "Sydney",
+      "state": "NSW",
+      "serves": ["High/Uncertain", "High/Weak", "Moderate/Weak"],
+      "why": [
+        {"indicators": ["D4"], "text": "Advises directors on ATO debt and penalty notice risk."}
+      ],
+      "why_default": "Advises directors on their options and obligations.",
+      "about": "Registered liquidators who advise directors on closing or selling a business safely and on their personal obligations.",
+      "contact_name": "Sample contact",
+      "phone": "(02) 5550 0104",
+      "email": "hello@quillon-insolvency.example"
+    },
+    {
+      "id": "fennick",
+      "name": "Fennick Turnaround",
+      "initials": "FT",
+      "colours": ["#E6F0FA", "#1D5FA8"],
+      "type": "turnaround",
+      "type_label": "Turnaround adviser",
+      "listed_partner": true,
+      "helps_with": "Margin and pricing reviews, overhead cuts, 13-week cash plans",
+      "city": "Brisbane",
+      "state": "QLD",
+      "serves": ["Moderate/Uncertain", "Moderate/Weak", "Low/Uncertain", "Low/Weak", "High/Uncertain"],
+      "why": [
+        {"indicators": ["V4"], "text": "Overheads are using up most of the gross profit."},
+        {"indicators": ["V2"], "text": "Works on pricing when gross margins are thin."}
+      ],
+      "why_default": "Helps owners find where the business is losing money.",
+      "about": "Turnaround advisers focused on getting the business itself back to profit: pricing, margins and overheads.",
+      "contact_name": "Sample contact",
+      "phone": "(07) 5550 0105",
+      "email": "hello@fennick.example"
+    },
+    {
+      "id": "tallow",
+      "name": "Tallow & Reed Accountants",
+      "initials": "TR",
+      "colours": ["#EEF2E4", "#4D6B1F"],
+      "type": "accountant",
+      "type_label": "Accountant",
+      "listed_partner": true,
+      "helps_with": "BAS and ATO lodgements, management accounts, cash flow forecasting",
+      "city": "Sydney",
+      "state": "NSW",
+      "serves": ["any"],
+      "why": [
+        {"indicators": ["D4"], "text": "Can bring ATO lodgements and payment plans back on track."}
+      ],
+      "why_default": "Keeps the books and tax lodgements up to date.",
+      "about": "Small business accountants: BAS, tax, monthly management accounts and cash flow forecasts.",
+      "contact_name": "Sample contact",
+      "phone": "(02) 5550 0106",
+      "email": "hello@tallowreed.example"
+    },
+    {
+      "id": "marrowby",
+      "name": "Marrowby Accounting",
+      "initials": "MA",
+      "colours": ["#F6EDE4", "#8A4B14"],
+      "type": "accountant",
+      "type_label": "Accountant",
+      "listed_partner": true,
+      "helps_with": "Xero bookkeeping clean-ups, budgets, debtor collection",
+      "city": "Adelaide",
+      "state": "SA",
+      "serves": ["any"],
+      "why": [
+        {"indicators": ["D10"], "text": "Helps chase overdue customer invoices."},
+        {"indicators": ["D9"], "text": "Helps customers pay faster."}
+      ],
+      "why_default": "Helps owners read their numbers and plan ahead.",
+      "about": "Accountants who tidy up Xero files, set budgets and help businesses collect what they're owed.",
+      "contact_name": "Sample contact",
+      "phone": "(08) 5550 0107",
+      "email": "hello@marrowby.example"
+    },
+    {
+      "id": "pellbridge",
+      "name": "Pellbridge Trade Finance",
+      "initials": "PT",
+      "colours": ["#E4F1F6", "#155E75"],
+      "type": "broker",
+      "type_label": "Finance broker",
+      "listed_partner": true,
+      "helps_with": "Invoice finance, trade finance, equipment finance",
+      "city": "Melbourne",
+      "state": "VIC",
+      "serves": ["Moderate/Strong", "Moderate/Uncertain", "Low/Strong", "Low/Uncertain", "High/Strong"],
+      "why": [
+        {"indicators": ["D11"], "text": "Invoice finance can turn sales into cash sooner."}
+      ],
+      "why_default": "Arranges finance that grows with sales.",
+      "about": "Finance brokers for invoice, trade and equipment finance.",
+      "contact_name": "Sample contact",
+      "phone": "(03) 5550 0108",
+      "email": "hello@pellbridge.example"
+    }
+  ]
+}

@@ -1,58 +1,74 @@
-"""Overview page: the adviser's one-page memo (verdict, scores, top issues, what's working, pathway)."""
-
-from datetime import date
+"""Overview page: verdict, data confidence, the two scores with their band bars, the recommended pathway,
+top 3 issues and what's working. Every number comes from score.py (via ui.current_run())."""
 
 import streamlit as st
 
 import score
 import ui
-from report_pdf import BAND_RATING, build_pdf
+from report_pdf import BAND_RATING
 from ui import esc, md
 
 run = ui.current_run()
-d, results = run["d"], run["results"]
+results = run["results"]
+text = ui.wording().get("overview_page", {})
+
+
+def band_bar(kind, value):
+    """Coloured segments sized by the band ranges in scorecard.json, with a marker at the score."""
+    bands = sorted(run["cfg"]["bands"][kind], key=lambda b: b["from"])
+    edges = [b["from"] for b in bands] + [100]
+    widths = [max(0, edges[i + 1] - edges[i]) for i in range(len(bands))]
+    segs = "".join(f"<b style='flex:{w};background:{ui.BAR[BAND_RATING.get(b['band'], 'Not assessed')]}'></b>"
+                   for b, w in zip(bands, widths))
+    marker = "" if value is None else f"<i style='left:{min(100, max(0, value)):.1f}%'></i>"
+    ticks = "".join(f"<span style='flex:{w}'>{esc(b['band'])}</span>" for b, w in zip(bands, widths))
+    return f"<div class='vy-bar'>{segs}{marker}</div><div class='vy-ticks'>{ticks}</div>"
 
 
 def score_card(kind):
-    s, weight, possible, _ = run["scores"][kind]
+    value = run["scores"][kind][0]
     band = run["bands"][kind]
-    marker = ui.MARKER[BAND_RATING.get(band, "Not assessed")]
-    meaning = "Higher means more distress" if kind == "distress" else "Higher means more viable"
-    noun = "distress" if kind == "distress" else "viability"
-    return f"""
-    <div class="vy-card">
-      <div class="label">{kind.title()}</div>
-      <div class="num">{'n/a' if s is None else f'{s:.0f}'}<span> / 100</span></div>
-      <div class="band"><span class="vy-dot" style="background:{marker}"></span>{esc(band)} {noun}</div>
-      <div class="hint">{meaning} · {weight:g} of {possible:g} weight points assessed</div>
-    </div>"""
+    shown = "&ndash;" if value is None else f"{value:.0f}"
+    return (f"<div class='vy-panel vy-score'><div class='top'><div>"
+            f"<div class='q'>{esc(text.get(kind + '_question', kind.title()))}</div>"
+            f"<div class='s'>{esc(text.get(kind + '_sub', ''))}</div></div>{ui.band_pill(band)}</div>"
+            f"<div class='big'>{shown}<span>/ 100</span></div>{band_bar(kind, value)}</div>")
 
 
-def memo_list(items, numbered):
+def bullet_list(items):
     rows = []
-    for i, r in enumerate(items, start=1):
-        ind = r["ind"]
-        rows.append(f"""
-        <div class="vy-item">
-          <div class="n">{i if numbered else '&#10003;'}</div>
-          <div><span class="t">{esc(ind.get('name', ''))}</span>{ui.pill(r)}
-            <span class="v">{esc(r.get('display', ''))}</span>
-            <div class="x">{esc(r.get('explanation') or r.get('note', ''))}</div></div>
-        </div>""")
+    for r in items:
+        value = r.get("display", "")
+        rows.append(f"<div class='vy-li'><span class='d' style='background:{ui.MARKER[score_rating(r)]}'></span><div>"
+                    f"<div class='t'>{esc(r['ind'].get('name', ''))}"
+                    f"{f' <span class=v>· {esc(value)}</span>' if value else ''}</div>"
+                    f"<div class='x'>{esc(ui.first_sentence(r.get('explanation') or r.get('note', '')))}</div></div></div>")
     return "".join(rows)
 
 
-left, right = st.columns([4, 1], vertical_alignment="top")
-with left:
-    ui.masthead(run)
-with right:
-    slug = "".join(c if c.isalnum() else "_" for c in d["org"]).strip("_").lower()
-    st.download_button("Export PDF", data=build_pdf(run), icon=":material/download:", width="stretch",
-                       file_name=f"vyta_report_{slug}_{date.today():%Y-%m-%d}.pdf", mime="application/pdf")
+def score_rating(r):
+    return r["rating"] if r["rating"] in ui.MARKER else "Not assessed"
 
-md(f"<div class='vy-verdict'>{esc(run['verdict'])}</div>")
+
+def list_card(key, title, items, empty, link=None):
+    with st.container(key=f"card-{key}"):
+        left, right = st.columns([3, 2], vertical_alignment="center")
+        with left:
+            md(f"<div class='vy-cardhead'>{esc(title)}</div>")
+        if link:
+            with right:
+                st.page_link("views/details.py", label=link)
+        md(bullet_list(items) if items else f"<div class='vy-sub'>{esc(empty)}</div>")
+
+
+ui.page_head(text.get("eyebrow", "Overview"), run["verdict"])
 for problem in run["problems"]:
     st.warning(f"wording.json: {problem}")
+
+conf = run["confidence"]
+md(f"<div class='vy-banner {esc(conf['level'])}'><span class='i'>{'i' if conf['level'] == 'High' else '!'}</span>"
+   f"<div><b>{esc(text.get('confidence', {}).get(conf['level'], conf['level'] + ' data confidence.'))}</b> "
+   f"{esc(conf['text'])}</div></div>")
 
 a, b = st.columns(2, gap="medium")
 with a:
@@ -60,28 +76,23 @@ with a:
 with b:
     md(score_card("viability"))
 
-conf = run["confidence"]
-md(f"<div class='vy-conf'><b>Data confidence: {esc(conf['level'])}.</b> {esc(conf['text'])}</div>")
+applied = [n.replace("APPLIED: ", "") for n in run["override_notes"] if n.startswith("APPLIED")]
+with st.container(key="vy-pathway"):
+    left, right = st.columns([3, 1.1], vertical_alignment="center")
+    with left:
+        md(f"<div class='vy-path'><div class='e'>{esc(text.get('pathway_eyebrow', 'Recommended pathway'))}</div>"
+           f"<div class='t'>{esc(run['pathway_label'])}</div><div class='x'>{esc(run['summary'])}</div>"
+           + (f"<div class='o'>{esc(text.get('override', ''))} {esc(' '.join(applied))}</div>" if applied else "")
+           + "</div>")
+    with right:
+        st.page_link("views/get_help.py", label=f"{text.get('pathway_button', 'See matched advisers')} →")
 
-issues = score.top_issues(results)
-ui.heading("Top 3 issues")
-md(memo_list(issues, numbered=True) if issues else "<div class='vy-sub'>No indicators are flagged Red or Amber.</div>")
+left, right = st.columns(2, gap="medium")
+with left:
+    list_card("issues", text.get("issues_title", "Top 3 issues"), score.top_issues(results),
+              text.get("issues_none", ""), link=text.get("issues_link", "All {count} indicators").format(count=len(results)))
+with right:
+    list_card("working", text.get("working_title", "What's working"), score.whats_working(results),
+              text.get("working_none", ""))
 
-working = score.whats_working(results)
-ui.heading("What's working")
-md(memo_list(working, numbered=False) if working else "<div class='vy-sub'>Nothing is rated Green yet.</div>")
-
-applied = [n for n in run["override_notes"] if n.startswith("APPLIED")]
-override = " ".join(applied or run["override_notes"]) or "none set up"
-ui.heading("Recommended pathway")
-md(f"""<div class="vy-path">
-  <div class="label">{esc(score.sentence_case(run['pathway']))}</div>
-  <div class="x">{esc(run['summary'])}</div>
-</div>
-<div class="vy-note">Statutory demand override: {esc(override)}</div>""")
-
-flagged = sum(1 for r in results if r["rating"] in score.SEVERITY)
-skipped = sum(1 for r in results if r["points"] is None)
-md(f"<div class='vy-note' style='margin-top:var(--s6)'>{flagged} indicators are Red or Amber and "
-   f"{skipped} couldn't be assessed. See the Indicators page for every indicator.<br>"
-   f"{esc(run['cfg'].get('disclaimer', ''))}</div>")
+md(f"<div class='vy-foot'>{esc(text.get('footer', ''))}</div>")

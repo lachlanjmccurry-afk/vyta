@@ -5,32 +5,35 @@ Run with:   py -m streamlit run dashboard.py
             (or, with the .venv not activated:  .venv\\Scripts\\python.exe -m streamlit run dashboard.py)
 
 Opens in your web browser (http://localhost:8501). It runs only on this computer.
-Pick a client in the left sidebar and a page in the bar along the top. Close the terminal window
+Pick a business in the white bar along the top and a page in the navy sidebar. Close the terminal window
 (or press Ctrl+C) to stop it.
 
 Pages (in views\\):
-  Overview         - the adviser's memo: verdict, the two scores, top issues, pathway, PDF export
+  Overview         - verdict, data confidence, the two scores with their bands, the recommended pathway,
+                     top 3 issues and what's working
+  Details          - key balances, then every indicator (Distress / Viability tabs); click a row for the
+                     explanation, 12-month trend and figures used
+  Get help         - advisers from firms.json (fictional demo listings) matched to the pathway
+  More tools:
   Cash             - "Where has the cash gone?" waterfall (worked out in cashflow.py)
-  Indicators       - every indicator with a 12-month sparkline; Details opens the full trend chart
-  What if?         - sliders for price, revenue, costs, overhead, debtor collection and an ATO plan;
-                     both scores re-worked live by whatif.py (scored by score.score_data)
+  What if?         - sliders that re-score the business live (whatif.py)
   History          - both scores across the saved snapshots, and which indicators changed colour
   Owner questions  - the questions only the owner can answer, and what they feed into
 
-This file sets up the shared look, the logo, the client picker and the Last updated line with its
-Refresh now button, scores the chosen client once, then shows the chosen page. Shared pieces are in
-ui.py, charts in charts.py.
+This file draws the sidebar and the top bar (business picker, Last updated, Refresh now, Export PDF),
+scores the chosen business once, then shows the chosen page. Shared pieces are in ui.py, charts in charts.py.
 
 The pages only read the files made by build_model.py and sync.py. Refresh now runs sync.py, which
 (for the data folder only) reads from Xero - never writes to it.
-All wording comes from wording.json and scorecard.json; colours and theme are in .streamlit\\config.toml.
+All wording comes from wording.json, scorecard.json and firms.json; the theme is in .streamlit\\config.toml.
 """
 
 import streamlit as st
 
 import ui
 
-st.set_page_config(page_title="Vyta", layout="wide", menu_items={})
+st.set_page_config(page_title="Vyta", page_icon="assets/vyta_mark.png", layout="wide",
+                   initial_sidebar_state="expanded", menu_items={})
 st.markdown(ui.CSS, unsafe_allow_html=True)
 
 folders = ui.data_folders()
@@ -38,19 +41,25 @@ if not folders:
     st.error("No scored data found yet.")
     st.stop()
 
-with st.sidebar:
-    ui.logo()
-    folder = st.selectbox("Client", folders, format_func=ui.org_name, key="folder")
-    ui.refresh_panel(folder)
+MAIN = [
+    st.Page("views/overview.py", title="Overview", icon=":material/grid_view:", default=True),
+    st.Page("views/details.py", title="Details", icon=":material/notes:"),
+    st.Page("views/get_help.py", title="Get help", icon=":material/group:"),
+]
+MORE = [
+    st.Page("views/cash.py", title="Cash", icon=":material/payments:"),
+    st.Page("views/whatif.py", title="What if?", icon=":material/tune:"),
+    st.Page("views/history.py", title="History", icon=":material/history:"),
+    st.Page("views/owner_questions.py", title="Owner questions", icon=":material/help:"),
+]
+page = st.navigation(MAIN + MORE, position="hidden")
 
-st.session_state["vy_run"] = ui.run_scoring(folder)
+bar = ui.topbar()
+with bar[1]:
+    folder = st.selectbox("Business", folders, format_func=ui.org_name, key="folder", label_visibility="collapsed")
+st.session_state["vy_run"] = run = ui.run_scoring(folder)
+ui.fill_topbar(bar, run, folder, on_help_page=page.title == "Get help")
+ui.sidebar(MAIN, MORE, page, folder)
+ui.show_flash()
 
-page = st.navigation([
-    st.Page("views/overview.py", title="Overview", default=True),
-    st.Page("views/cash.py", title="Cash"),
-    st.Page("views/indicators.py", title="Indicators"),
-    st.Page("views/whatif.py", title="What if?"),
-    st.Page("views/history.py", title="History"),
-    st.Page("views/owner_questions.py", title="Owner questions"),
-], position="top")
 page.run()

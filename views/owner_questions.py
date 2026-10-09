@@ -8,7 +8,7 @@ from ui import esc, md
 run = ui.current_run()
 text = ui.wording().get("owner_questions_page", {})
 
-ui.masthead(run, "Owner questions")
+ui.page_head("Owner questions", text.get("heading", "Owner questions"))
 md(f"<div class='vy-sub'>{esc(text.get('intro', ''))}</div>")
 
 rows = []

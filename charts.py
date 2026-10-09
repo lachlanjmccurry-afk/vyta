@@ -1,9 +1,10 @@
 """
 VYTA - Charts for the dashboard (Plotly)
 -----------------------------------------
-One chart style for every chart: navy and warm grey on white, recessive grid, no Plotly or
+One chart style for every chart: navy and cool grey on white, recessive grid, no Plotly or
 Streamlit default colours. Traffic-light colours appear only as the Amber/Red threshold zones
-in the indicator drill-down. Show charts with  ui.chart(fig)  (it switches off Streamlit's theme).
+in trend charts. Show charts with  ui.chart(fig)  (it switches off Streamlit's theme).
+The palette here is the dashboard's palette too (ui.py imports it).
 """
 
 import plotly.graph_objects as go
@@ -12,14 +13,14 @@ import plotly.io as pio
 import score
 from report_pdf import RATING_STYLE
 
-NAVY = "#1F3864"
-NAVY_MID = "#5A6F96"     # increases in the waterfall
-WARM_GREY = "#A8A29A"    # decreases in the waterfall, secondary lines
-INK = "#2B2B2B"
-MUTED = "#6B665F"
-RULE = "#E4E0DA"
-GRID = "#EFECE7"
-SANS = "'Source Sans Pro', 'Segoe UI', Arial, sans-serif"
+NAVY = "#0F1A2A"
+NAVY_MID = "#4A5B78"     # increases in the waterfall
+WARM_GREY = "#A3ABB8"    # decreases in the waterfall, secondary lines
+INK = "#101828"
+MUTED = "#667085"
+RULE = "#E4E7EC"
+GRID = "#F0F2F5"
+SANS = "'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif"
 
 pio.templates["vyta"] = go.layout.Template(layout=dict(
     font=dict(family=SANS, size=12, color=INK),
@@ -53,6 +54,39 @@ def sparkline(points):
     fig.update_layout(template=TEMPLATE, height=34, margin=dict(l=2, r=6, t=4, b=4),
                       xaxis=dict(visible=False), yaxis=dict(visible=False))
     return fig
+
+
+def svg_trend(points, ind, width=260, height=64):
+    """A small inline SVG trend (for HTML rows that can't hold a Plotly chart): navy line, with the
+    Amber and Red warning levels as dashed lines. Gaps where a month has no value."""
+    ys = [v for _, v in points if v is not None]
+    if not ys:
+        return ""
+    levels = [ind["amber"], ind["red"]]
+    low, high = min(ys + levels), max(ys + levels)
+    span = (high - low) or abs(high) or 1
+    low, high = low - span * 0.08, high + span * 0.08
+    n = max(1, len(points) - 1)
+    x = lambda i: 4 + (width - 8) * i / n
+    y = lambda v: 4 + (height - 8) * (high - v) / (high - low)
+    lines = "".join(f"<line x1='4' x2='{width - 4}' y1='{y(v):.1f}' y2='{y(v):.1f}' stroke='{c}' stroke-width='1' "
+                    f"stroke-dasharray='3 3' opacity='.7'/>"
+                    for v, c in ((ind["amber"], "#F79009"), (ind["red"], "#D92D20")))
+    runs, run = [], []
+    for i, (_, v) in enumerate(points):
+        if v is None:
+            if run:
+                runs.append(run)
+            run = []
+        else:
+            run.append(f"{x(i):.1f},{y(v):.1f}")
+    runs += [run] if run else []
+    paths = "".join(f"<polyline points='{' '.join(r)}' fill='none' stroke='{NAVY}' stroke-width='2' "
+                    f"stroke-linejoin='round' stroke-linecap='round'/>" for r in runs)
+    last = next(((i, v) for i, (_, v) in reversed(list(enumerate(points))) if v is not None))
+    dot = f"<circle cx='{x(last[0]):.1f}' cy='{y(last[1]):.1f}' r='3.5' fill='{NAVY}' stroke='#fff' stroke-width='1.5'/>"
+    return (f"<svg width='{width}' height='{height}' viewBox='0 0 {width} {height}' role='img' "
+            f"aria-label='Trend over the last {len(points)} months'>{lines}{paths}{dot}</svg>")
 
 
 def zones(ind, low, high):

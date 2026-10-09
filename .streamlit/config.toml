@@ -1,7 +1,7 @@
 # Vyta dashboard look and behaviour (read by  py -m streamlit run dashboard.py)
 
 [client]
-# Hide Streamlit's Deploy button and developer menu
+# Hide Streamlit's Deploy button and developer menu; dashboard.py draws its own sidebar navigation
 toolbarMode = "minimal"
 showSidebarNavigation = false
 
@@ -10,11 +10,19 @@ gatherUsageStats = false
 
 [theme]
 base = "light"
-# Restrained navy / warm-grey palette. Traffic-light colours are used only on results (set in dashboard.py).
-primaryColor = "#1F3864"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F5F3EF"
-textColor = "#2B2B2B"
-borderColor = "#E4E0DA"
-headingFont = "Georgia, 'Times New Roman', serif"
-baseRadius = "6px"
+# Navy / cool-grey palette (same values as charts.py and ui.py). Traffic-light colours only on results.
+# Plus Jakarta Sans is loaded from Google Fonts by ui.py; Segoe UI is the fallback when offline.
+primaryColor = "#0F1A2A"
+backgroundColor = "#F5F6F8"
+secondaryBackgroundColor = "#F2F4F7"
+textColor = "#101828"
+borderColor = "#E4E7EC"
+font = "'Plus Jakarta Sans', 'Segoe UI', sans-serif"
+headingFont = "'Plus Jakarta Sans', 'Segoe UI', sans-serif"
+baseRadius = "10px"
+
+[theme.sidebar]
+backgroundColor = "#0F1A2A"
+secondaryBackgroundColor = "#1C2838"
+textColor = "#C3CBD6"
+borderColor = "#1E2A3A"
