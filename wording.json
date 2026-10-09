@@ -1,0 +1,182 @@
+{
+  "_about": "Plain-English wording for the Vyta report. score.py reads this file - edit the sentences here, no code changes needed.",
+  "_how_to_edit": [
+    "Each indicator has three sentences: 'green' (what's going well and what to keep doing), 'amber' (a warning) and 'red' (a serious warning).",
+    "Words in {curly brackets} are filled in with real numbers when the report is made. Keep the curly brackets exactly as they are.",
+    "Every indicator can use: {name} {value} {threshold} {amber} {red} {value_pct} {threshold_pct}.",
+    "  {value} and {threshold} are shown in the indicator's own units (e.g. '29 days', '91.8%', '0.58').",
+    "  {threshold} is the Amber threshold in the Green and Amber sentences, and the Red threshold in the Red sentence.",
+    "  {value_pct} / {threshold_pct} show a ratio as a percentage (0.58 -> 58%).",
+    "Each indicator can also use the extra figures listed in its '_also_available' line.",
+    "Sentences like 'red_overdrawn' or 'green_no_debt' are used instead of the normal one in a special case (e.g. the bank account is overdrawn, so there's no runway to calculate).",
+    "If a sentence uses a word in {brackets} that doesn't exist, score.py prints a note and leaves it as-is in the report.",
+    "Save the file, then re-run score.py. If score.py says the file is broken, check for a missing comma or quote."
+  ],
+
+  "fallback": "{name}: {value} ({rating}).",
+
+  "indicators": {
+    "D1": {
+      "_also_available": "{current_assets} {current_liabilities} {month}",
+      "green": "Short-term assets of {current_assets} comfortably cover short-term debts of {current_liabilities} ({value} times, above the {threshold} warning level). Keep this buffer in place, especially ahead of big bills like BAS or insurance.",
+      "green_no_liabilities": "The business has no short-term debts at the moment.",
+      "amber": "Short-term assets of {current_assets} are only {value} times short-term debts of {current_liabilities} (warning at {threshold}), leaving little buffer if bills fall due together.",
+      "red": "Short-term debts of {current_liabilities} are at least as large as short-term assets of {current_assets} (ratio {value}, Red at {threshold} or below), so the business may struggle to pay debts as they fall due."
+    },
+    "D2": {
+      "_also_available": "{cash} {debtors} {cash_and_debtors} {current_liabilities}",
+      "green": "Cash plus money owed by customers ({cash_and_debtors}) covers {value_pct} of short-term debts of {current_liabilities}, above the {threshold_pct} warning level. Keep collecting from customers promptly to hold this position.",
+      "green_no_liabilities": "The business has no short-term debts at the moment.",
+      "amber": "Cash plus money owed by customers ({cash_and_debtors}) covers only {value_pct} of short-term debts of {current_liabilities} (warning at {threshold_pct}).",
+      "red": "Cash plus money owed by customers ({cash_and_debtors}) covers only {value_pct} of short-term debts of {current_liabilities} (Red at {threshold_pct} or below), so paying what is already owed depends on future sales or new funding."
+    },
+    "D3": {
+      "_also_available": "{cash} {cash_before} {month} {month_before} {monthly_outflow}",
+      "green": "At the recent rate of spending, cash of {cash} would last about {value}, above the {threshold} warning level. Aim to keep at least {threshold} of costs in reserve.",
+      "green_not_falling": "Cash isn't falling: it went from {cash_before} at {month_before} to {cash} at {month}. Keep building a reserve to carry the business through quieter months.",
+      "amber": "At the recent rate of spending ({monthly_outflow} a month), cash of {cash} would last about {value} (warning at {threshold} or less).",
+      "red": "At the recent rate of spending ({monthly_outflow} a month), cash of {cash} would run out in about {value} (Red at {threshold} or less).",
+      "red_overdrawn": "There is no cash buffer: the bank balance is {cash} (overdrawn) at {month}, so any unexpected bill has to be met from the overdraft or new funding."
+    },
+    "D4": {
+      "_also_available": "{ato_start} {ato_now} {ato_increase} {month}",
+      "green": "The amount owed to the ATO ({ato_now}) isn't building up month after month, a good sign that tax is being paid on time. Keep lodging and paying BAS, PAYG and super by their due dates.",
+      "amber": "The amount owed to the ATO has risen for {value} months in a row, to {ato_now}. This can be normal in the run-up to a BAS payment, but check it is paid in full when due.",
+      "red": "The amount owed to the ATO has risen for {value} months in a row (Red at {threshold} months or more), from {ato_start} to {ato_now}. Growing tax debt is one of the clearest early signs of a cash problem, and unpaid PAYG, GST and super can lead to director penalty notices."
+    },
+    "D5": {
+      "_also_available": "{debt_before} {debt_now} {month_before} {month}",
+      "green": "Bank loans and overdraft changed by {value} over six months ({debt_before} to {debt_now}), below the {threshold} warning level, so the business isn't leaning on extra borrowing. Keep paying debt down where you can.",
+      "green_no_debt": "The business has no bank loans or overdraft, so it isn't relying on borrowing to fund day-to-day costs.",
+      "amber": "Bank loans and overdraft have grown {value} in six months, from {debt_before} to {debt_now} (warning at {threshold}).",
+      "red": "Bank loans and overdraft have grown {value} in six months, from {debt_before} to {debt_now} (Red at {threshold}), which suggests borrowing is being used to cover cash shortfalls.",
+      "red_new_debt": "The business has taken on {debt_now} of bank debt or overdraft in the last six months, having had none at {month_before}."
+    },
+    "D6": {
+      "_also_available": "{overdraft} {limit}",
+      "green": "The overdraft is {value} drawn ({overdraft} of a {limit} limit), leaving headroom for unexpected costs. Keep it as a safety net rather than a permanent source of funding.",
+      "amber": "The overdraft is {value} drawn ({overdraft} of a {limit} limit; warning at {threshold}), leaving little room for unexpected costs.",
+      "red": "The overdraft is at or over its limit: {overdraft} drawn against a {limit} limit ({value}; Red at {threshold}). The bank may refuse further payments."
+    },
+    "D7": {
+      "_also_available": "{creditors} {yearly_costs} {active_months}",
+      "green": "Suppliers are paid in about {value} on average, inside the {threshold} warning level. Paying on time protects supplier relationships and credit terms, so keep it up.",
+      "amber": "Suppliers are being paid in about {value} on average (warning at {threshold}), which can start to strain supplier relationships.",
+      "red": "Suppliers are waiting about {value} on average to be paid (Red at {threshold}), with {creditors} owed. Suppliers may stop offering credit or start chasing the debt."
+    },
+    "D8": {
+      "_also_available": "{overdue_90} {total_unpaid} {as_at}",
+      "green": "Only {value} of unpaid supplier bills ({overdue_90} of {total_unpaid}) are more than 90 days overdue. Keep paying suppliers within their terms.",
+      "green_nothing_unpaid": "There are no unpaid supplier bills.",
+      "green_none_overdue": "None of the {total_unpaid} in unpaid supplier bills is more than 90 days overdue. Keep paying suppliers within their terms.",
+      "amber": "{value} of unpaid supplier bills ({overdue_90} of {total_unpaid}) are more than 90 days overdue (warning at {threshold}).",
+      "red": "{value} of unpaid supplier bills ({overdue_90} of {total_unpaid}) are more than 90 days overdue (Red at {threshold}). Long-overdue suppliers are the most likely source of a statutory demand."
+    },
+    "D9": {
+      "_also_available": "{days_before} {days_now} {month_before} {month}",
+      "green": "Customers are paying about as quickly as before, or faster: debtor days moved from {days_before} to {days_now} over three months. Keep invoicing promptly and following up late payers.",
+      "amber": "Customers are taking longer to pay: debtor days rose by {value} in three months, from {days_before} to {days_now} (warning at a rise of {threshold}).",
+      "red": "Customers are taking much longer to pay: debtor days rose by {value} in three months, from {days_before} to {days_now} (Red at a rise of {threshold}). More cash is being tied up in unpaid invoices."
+    },
+    "D10": {
+      "_also_available": "{overdue_90} {total_unpaid} {as_at}",
+      "green": "Only {value} of money owed by customers ({overdue_90} of {total_unpaid}) is more than 90 days overdue. Keep following up invoices as soon as they fall due.",
+      "green_nothing_unpaid": "No customers owe the business money at the moment.",
+      "green_none_overdue": "None of the {total_unpaid} owed by customers is more than 90 days overdue. Keep following up invoices as soon as they fall due.",
+      "amber": "{value} of money owed by customers ({overdue_90} of {total_unpaid}) is more than 90 days overdue (warning at {threshold}). Some of it may not be collectable.",
+      "red": "{value} of money owed by customers ({overdue_90} of {total_unpaid}) is more than 90 days overdue (Red at {threshold}). It may need to be written off, and it is worth finding out why these customers aren't paying."
+    },
+    "D11": {
+      "_also_available": "{cash} {month}",
+      "green": "There's no sign of sales growth draining cash. As sales grow, keep an eye on stock levels and how quickly customers pay.",
+      "amber": "Sales have been rising while cash has fallen for {value} months in a row (warning at {threshold} months). Cash may be going into stock, slow-paying customers or costs.",
+      "red": "Sales have been rising while cash has fallen for {value} months in a row (Red at {threshold} months or more). Growth is using up cash faster than it comes in, so find out where the cash is going."
+    },
+    "D12": {
+      "_also_available": "{ocf} {profit} {depreciation} {working_capital} {current_liabilities}",
+      "green": "Day-to-day trading generated an estimated {ocf} over the year, enough to cover {value_pct} of short-term debts of {current_liabilities}. The business is funding itself from trading, which is the strongest position to be in.",
+      "green_no_liabilities": "The business has no short-term debts at the moment.",
+      "amber": "Day-to-day trading generated an estimated {ocf} over the year, enough to cover only {value_pct} of short-term debts of {current_liabilities} (warning at {threshold_pct}).",
+      "red": "Day-to-day trading generated an estimated {ocf} over the year, enough to cover only {value_pct} of short-term debts of {current_liabilities} (Red at {threshold_pct} or below). Trading alone isn't producing the cash needed to pay what is owed.",
+      "red_negative": "Day-to-day trading used more cash than it brought in over the year (an estimated {ocf}), so none of the short-term debts of {current_liabilities} are being paid for by trading."
+    },
+    "D13": {
+      "_also_available": "{total_liabilities} {total_assets}",
+      "green": "Debts of {total_liabilities} are {value_pct} of total assets of {total_assets}, below the {threshold_pct} warning level, so the business isn't over-reliant on borrowing.",
+      "amber": "Debts of {total_liabilities} equal {value_pct} of total assets of {total_assets} (warning at {threshold_pct}), so most of the business is funded by borrowing.",
+      "red": "Debts of {total_liabilities} are at or above total assets of {total_assets} ({value_pct}; Red at {threshold_pct}). Even selling everything would not repay all debts.",
+      "red_no_assets": "The business has no assets recorded against debts of {total_liabilities}."
+    },
+
+    "V1": {
+      "_also_available": "{net_assets} {total_assets}",
+      "green": "Owners' equity is {value_pct} of total assets (net assets {net_assets}), a solid buffer to absorb a bad patch. Keeping profits in the business keeps it strong.",
+      "amber": "Owners' equity is only {value_pct} of total assets (net assets {net_assets}; warning at {threshold_pct}), so there is a thin buffer to absorb losses.",
+      "red": "The business owes more than it owns: net assets are {net_assets} (equity ratio {value_pct}; Red at {threshold_pct} or below). This is a serious warning sign, although Australian insolvency is judged on whether debts can be paid as they fall due.",
+      "red_no_assets": "The business has no assets recorded, so there is nothing to absorb losses (net assets {net_assets})."
+    },
+    "V2": {
+      "_also_available": "{gross_profit} {revenue}",
+      "green": "Gross margin is {value}, above the {threshold} warning level, leaving room to cover overheads and invest. Review prices regularly so rising costs don't erode it.",
+      "amber": "Gross margin is {value} (warning at {threshold}), leaving limited room to cover overheads and repay debt.",
+      "red": "Gross margin is only {value} (Red at {threshold}). Each sale leaves very little to pay overheads, so pricing or direct costs need attention."
+    },
+    "V3": {
+      "_also_available": "{margin_before} {margin_now}",
+      "green": "Gross margin has held steady or improved over the year ({margin_before} to {margin_now}). Keep watching supplier costs and discounting to protect it.",
+      "amber": "Gross margin slipped from {margin_before} to {margin_now} over the past year ({value}; warning at {threshold}).",
+      "red": "Gross margin fell sharply over the past year, from {margin_before} to {margin_now} ({value}; Red at {threshold}). Rising costs or discounting are eroding the profit on every sale."
+    },
+    "V4": {
+      "_also_available": "{opex} {gross_profit}",
+      "green": "Overheads of {opex} use {value} of gross profit ({gross_profit}), below the {threshold} warning level, so the business is a sustainable size for its sales. Keep overheads growing more slowly than gross profit.",
+      "amber": "Overheads of {opex} use up {value} of gross profit ({gross_profit}; warning at {threshold}), leaving little profit.",
+      "red": "Overheads of {opex} use up {value} of gross profit ({gross_profit}; Red at {threshold}). The business is too big for its current sales unless overheads come down or margins go up.",
+      "red_no_gross_profit": "The business made no gross profit over the year ({gross_profit}), so nothing is left to pay overheads of {opex}."
+    },
+    "V5": {
+      "_also_available": "{underlying_profit} {revenue} {profit} {interest} {depreciation} {one_off}",
+      "green": "Underlying profit is {underlying_profit}, {value} of revenue, so the core business makes money. This is the most important sign that the business is viable.",
+      "amber": "Underlying profit (before interest, depreciation and one-off costs) is {underlying_profit}, only {value} of revenue (warning at {threshold}).",
+      "red": "Even before interest, depreciation and one-off costs, the business is not making money: underlying profit is {underlying_profit} ({value} of revenue; Red at {threshold}). Fixing the cash problem alone would not make it viable."
+    },
+    "V6": {
+      "_also_available": "{revenue_before} {revenue_now}",
+      "green": "Revenue has held up or grown over the year ({revenue_before} to {revenue_now}, {value}). Keep investing in what is bringing customers in.",
+      "amber": "Revenue fell from {revenue_before} to {revenue_now} over the past year ({value}; warning at {threshold}).",
+      "red": "Revenue dropped sharply over the past year, from {revenue_before} to {revenue_now} ({value}; Red at {threshold}). Demand for what the business sells is shrinking."
+    },
+    "V7": {
+      "_also_available": "(none yet - Xero Quotes are not pulled)",
+      "green": "Open quotes cover {value} months of average revenue, so there is work lined up.",
+      "amber": "Open quotes cover only {value} months of average revenue (warning at {threshold}).",
+      "red": "Open quotes cover only {value} months of average revenue (Red at {threshold}), so there is little work lined up."
+    },
+    "V8": {
+      "_also_available": "{nca} {ncl}",
+      "green": "Long-term assets of {nca} cover long-term debts of {ncl} ({value} times), giving lenders good security if the business ever needs to refinance.",
+      "green_no_long_term_liabilities": "The business has no long-term debt.",
+      "amber": "Long-term assets of {nca} only just cover long-term debts of {ncl} (ratio {value}; warning at {threshold}), which limits options to refinance.",
+      "red": "Long-term debts of {ncl} are larger than long-term assets of {nca} (ratio {value}; Red at {threshold}), so lenders have little security to support refinancing."
+    }
+  },
+
+  "pathways": {
+    "Low": {
+      "Strong": "The business is in good shape: it is trading profitably and paying its debts. Keep doing what is working and check in each quarter.",
+      "Uncertain": "There is no immediate cash pressure, but profitability isn't convincing. Now is the time to work on pricing, margins and overheads.",
+      "Weak": "Cash is fine for now, but the business isn't making money. Fix the business model before it becomes a cash problem."
+    },
+    "Moderate": {
+      "Strong": "A sound business under some cash pressure. Act early: chase debtors, talk to the ATO about a payment plan, or refinance.",
+      "Uncertain": "Cash is tightening and profitability is unclear. Work out where the cash has been going and get advice on a turnaround plan.",
+      "Weak": "Cash pressure is building in a business that isn't making money. Get professional advice on restructuring or a planned exit."
+    },
+    "High": {
+      "Strong": "Serious cash and debt pressure, but the underlying business makes money, so it may be worth saving through a formal restructure (SBR, VA or safe harbour). Get insolvency advice now.",
+      "Uncertain": "Serious financial distress, and it isn't clear the business can recover. Get urgent advice from a registered insolvency practitioner.",
+      "Weak": "Serious distress in a business that isn't making money. Get urgent advice from a registered insolvency practitioner on the safest way to close or sell."
+    }
+  },
+  "pathway_not_enough_data": "There isn't enough data yet to place the business on the outcome matrix."
+}

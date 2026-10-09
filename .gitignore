@@ -1,0 +1,30 @@
+# ---- Secrets: never commit ----
+.env
+.env.*
+tokens.json
+*token*.json
+*credential*
+*secret*
+*.pem
+*.key
+.streamlit/secrets.toml
+
+# ---- Business data pulled from Xero, and everything made from it ----
+# (data\raw = raw Xero downloads, data\model = models, scores and PDF reports)
+data/
+# Synthetic test businesses - recreate with:  py make_test_data.py
+data_*/
+
+# ---- Python environment and caches ----
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# ---- Editor / OS clutter ----
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+~$*

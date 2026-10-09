@@ -1,0 +1,243 @@
+{
+  "_about": "Vyta scorecard settings. Built from vyta_scorecard_v2.xlsx (9 Oct 2026). score.py reads this file - change thresholds, weights and bands here, no code changes needed.",
+  "_how_to_edit": [
+    "Percentages are written as decimals: 10% = 0.10, -5% = -0.05.",
+    "direction 'higher_is_worse': Amber when value >= amber, Red when value >= red.",
+    "direction 'lower_is_worse': Amber when value <= amber, Red when value <= red.",
+    "Weights within each score should add up to 100 (score.py warns if not).",
+    "Set \"enabled\": false to drop an indicator without deleting it.",
+    "Save the file, then re-run score.py. If score.py says the file is broken, check for a missing comma or quote."
+  ],
+  "version": "v2",
+  "source": "vyta_scorecard_v2.xlsx",
+  "disclaimer": "Indicative early-warning signals only - not an insolvency determination or professional advice. Thresholds are working assumptions, not industry-calibrated benchmarks.",
+
+  "points": {
+    "distress": { "Red": 100, "Amber": 50, "Green": 0 },
+    "viability": { "Green": 100, "Amber": 50, "Red": 0 }
+  },
+
+  "bands": {
+    "distress": [
+      { "band": "High", "from": 60 },
+      { "band": "Moderate", "from": 30 },
+      { "band": "Low", "from": 0 }
+    ],
+    "viability": [
+      { "band": "Strong", "from": 65 },
+      { "band": "Uncertain", "from": 40 },
+      { "band": "Weak", "from": 0 }
+    ]
+  },
+
+  "overrides": [
+    {
+      "id": "statutory_demand",
+      "when_owner_answer": "Q1",
+      "equals": "Yes",
+      "set_distress_band": "High",
+      "reason": "An unpaid statutory demand is a formal insolvency trigger."
+    }
+  ],
+
+  "outcome_matrix": {
+    "Low": {
+      "Strong": "Healthy. Monitor quarterly.",
+      "Uncertain": "Performance review: margin, pricing and overhead improvements.",
+      "Weak": "Structural concern: fix the business model before cash runs out."
+    },
+    "Moderate": {
+      "Strong": "Early intervention: working capital fix, refinance, ATO payment plan.",
+      "Uncertain": "Turnaround review: where has the cash been going?",
+      "Weak": "Serious: restructure or plan an orderly exit."
+    },
+    "High": {
+      "Strong": "RESTRUCTURE CANDIDATE: SBR, VA or safe harbour. Profitable business with legacy balance sheet issues. Priority lead for advisory firms.",
+      "Uncertain": "Urgent advice: assess restructure vs liquidation.",
+      "Weak": "Likely liquidation / exit pathway (CVL, sale of business)."
+    }
+  },
+
+  "indicators": [
+    {
+      "id": "D1", "score": "distress", "enabled": true,
+      "name": "Current ratio",
+      "calculation": "Current assets / current liabilities (latest month-end)",
+      "direction": "lower_is_worse", "amber": 1.2, "red": 1.0, "weight": 8, "unit": "ratio",
+      "status": "Rick to confirm formula"
+    },
+    {
+      "id": "D2", "score": "distress", "enabled": true,
+      "name": "Quick ratio",
+      "calculation": "(Cash + trade debtors) / current liabilities (latest month-end)",
+      "direction": "lower_is_worse", "amber": 1.0, "red": 0.7, "weight": 8, "unit": "ratio",
+      "status": "Rick to confirm formula"
+    },
+    {
+      "id": "D3", "score": "distress", "enabled": true,
+      "name": "Cash runway (months)",
+      "calculation": "Cash / average monthly net cash outflow (last 3 months)",
+      "direction": "lower_is_worse", "amber": 6, "red": 3, "weight": 10, "unit": "months",
+      "lookback_months": 3,
+      "if_cash_not_falling": "Green",
+      "if_cash_zero_or_negative": "Red",
+      "status": "Confirmed (draft threshold)"
+    },
+    {
+      "id": "D4", "score": "distress", "enabled": true,
+      "name": "ATO debt: consecutive months rising",
+      "calculation": "Count of consecutive month-ends (ending at the latest month) where total ATO liabilities increased",
+      "direction": "higher_is_worse", "amber": 2, "red": 3, "weight": 12, "unit": "count",
+      "min_increase_dollars": 0,
+      "status": "Threshold to confirm ('ATO definitely')"
+    },
+    {
+      "id": "D5", "score": "distress", "enabled": true,
+      "name": "Bank debt growth (6 months)",
+      "calculation": "% change in loans + overdraft balances over 6 months",
+      "direction": "higher_is_worse", "amber": 0.10, "red": 0.25, "weight": 7, "unit": "percent",
+      "lookback_months": 6,
+      "if_no_debt_before_but_debt_now": "Red",
+      "status": "New from Patrick"
+    },
+    {
+      "id": "D6", "score": "distress", "enabled": true,
+      "name": "Facility utilisation",
+      "calculation": "Overdraft/facility drawn / approved limit",
+      "direction": "higher_is_worse", "amber": 0.85, "red": 1.0, "weight": 6, "unit": "percent",
+      "needs_owner_input": "Approved overdraft/facility limit (not held in Xero)",
+      "approved_limit_dollars": null,
+      "status": "New from Patrick"
+    },
+    {
+      "id": "D7", "score": "distress", "enabled": true,
+      "name": "Trade creditor days",
+      "calculation": "Trade payables / (COGS + operating expenses, annualised) x 365",
+      "direction": "higher_is_worse", "amber": 60, "red": 90, "weight": 7, "unit": "days",
+      "status": "Confirmed (draft threshold)"
+    },
+    {
+      "id": "D8", "score": "distress", "enabled": true,
+      "name": "Trade creditors >90 days overdue",
+      "calculation": "Unpaid bills more than 90 days past due / total unpaid bills",
+      "direction": "higher_is_worse", "amber": 0.15, "red": 0.30, "weight": 7, "unit": "percent",
+      "status": "New from Patrick"
+    },
+    {
+      "id": "D9", "score": "distress", "enabled": true,
+      "name": "Debtor days trend (3 months)",
+      "calculation": "Debtor days now minus debtor days 3 months ago. Debtor days = trade debtors / (that month's revenue x 12) x 365",
+      "direction": "higher_is_worse", "amber": 10, "red": 20, "weight": 5, "unit": "days",
+      "lookback_months": 3,
+      "status": "New from Patrick"
+    },
+    {
+      "id": "D10", "score": "distress", "enabled": true,
+      "name": "Debtors >90 days overdue",
+      "calculation": "Unpaid sales invoices more than 90 days past due / total unpaid sales invoices",
+      "direction": "higher_is_worse", "amber": 0.15, "red": 0.25, "weight": 5, "unit": "percent",
+      "status": "New from Patrick"
+    },
+    {
+      "id": "D11", "score": "distress", "enabled": true,
+      "name": "Sales up, cash down",
+      "calculation": "Consecutive months (ending at the latest month) where rolling 3-month revenue rose and the cash balance fell",
+      "direction": "higher_is_worse", "amber": 2, "red": 3, "weight": 8, "unit": "count",
+      "status": "New from Patrick"
+    },
+    {
+      "id": "D12", "score": "distress", "enabled": true,
+      "name": "Operating cash flow ratio",
+      "calculation": "Operating cash flow (last 12 months) / current liabilities. Operating cash flow estimated as net profit + depreciation - increase in debtors + increase in creditors and ATO liabilities",
+      "direction": "lower_is_worse", "amber": 0.4, "red": 0.2, "weight": 7, "unit": "ratio",
+      "status": "Rick to confirm formula"
+    },
+    {
+      "id": "D13", "score": "distress", "enabled": true,
+      "name": "Debt-to-asset ratio",
+      "calculation": "Total liabilities / total assets",
+      "direction": "higher_is_worse", "amber": 0.7, "red": 1.0, "weight": 10, "unit": "ratio",
+      "if_assets_zero_or_negative": "Red",
+      "status": "New from Patrick"
+    },
+
+    {
+      "id": "V1", "score": "viability", "enabled": true,
+      "name": "Equity ratio",
+      "calculation": "Net assets / total assets",
+      "direction": "lower_is_worse", "amber": 0.2, "red": 0.0, "weight": 15, "unit": "ratio",
+      "status": "New from Patrick"
+    },
+    {
+      "id": "V2", "score": "viability", "enabled": true,
+      "name": "Gross margin",
+      "calculation": "Gross profit / revenue (last 12 months)",
+      "direction": "lower_is_worse", "amber": 0.30, "red": 0.15, "weight": 15, "unit": "percent",
+      "status": "Threshold varies by industry"
+    },
+    {
+      "id": "V3", "score": "viability", "enabled": true,
+      "name": "Gross margin trend (12 months)",
+      "calculation": "Gross margin (last 12 months) minus gross margin (previous 12 months), in percentage points",
+      "direction": "lower_is_worse", "amber": -0.02, "red": -0.05, "weight": 10, "unit": "percentage_points",
+      "needs_history_months": 24,
+      "status": "New from Patrick"
+    },
+    {
+      "id": "V4", "score": "viability", "enabled": true,
+      "name": "Overhead / gross profit",
+      "calculation": "Operating expenses / gross profit (last 12 months)",
+      "direction": "higher_is_worse", "amber": 0.9, "red": 1.0, "weight": 15, "unit": "percent",
+      "if_gross_profit_zero_or_negative": "Red",
+      "status": "New from Patrick"
+    },
+    {
+      "id": "V5", "score": "viability", "enabled": true,
+      "name": "Underlying profit margin",
+      "calculation": "(Net profit + interest + depreciation + one-off/legacy costs) / revenue (last 12 months)",
+      "direction": "lower_is_worse", "amber": 0.05, "red": 0.0, "weight": 20, "unit": "percent",
+      "interest_line_pattern": "interest",
+      "depreciation_line_pattern": "depreciation|amortisation|amortization",
+      "one_off_costs_dollars": 0,
+      "needs_owner_input": "One-off/legacy costs to add back (optional; defaults to $0)",
+      "status": "New from Patrick (core test)"
+    },
+    {
+      "id": "V6", "score": "viability", "enabled": true,
+      "name": "Revenue trend (12 months)",
+      "calculation": "% change in rolling 12-month revenue vs the previous 12 months",
+      "direction": "lower_is_worse", "amber": -0.05, "red": -0.15, "weight": 10, "unit": "percent",
+      "needs_history_months": 24,
+      "status": "New from Patrick"
+    },
+    {
+      "id": "V7", "score": "viability", "enabled": true,
+      "name": "Pipeline coverage",
+      "calculation": "Open quotes value / average monthly revenue",
+      "direction": "lower_is_worse", "amber": 1.0, "red": 0.5, "weight": 5, "unit": "ratio",
+      "needs_data": "Xero Quotes - not currently pulled by pull_data.py",
+      "status": "New from Patrick (data often patchy)"
+    },
+    {
+      "id": "V8", "score": "viability", "enabled": true,
+      "name": "Long-term asset coverage",
+      "calculation": "Non-current assets / non-current liabilities",
+      "direction": "lower_is_worse", "amber": 1.2, "red": 1.0, "weight": 10, "unit": "ratio",
+      "if_no_long_term_liabilities": "Green",
+      "status": "New from Patrick"
+    }
+  ],
+
+  "owner_questions": [
+    { "id": "Q1", "question": "Has the business received a statutory demand (or legal letter of demand) in the last 6 months?", "feeds": "Distress (override)", "answer": null },
+    { "id": "Q2", "question": "Is the business behind on any bank loan repayments, or has the bank extended or increased limits recently?", "feeds": "Distress", "answer": null },
+    { "id": "Q3", "question": "Is there an ATO payment plan in place, and is it being met?", "feeds": "Distress", "answer": null },
+    { "id": "Q4", "question": "Who is your customer, and what problem do you solve for them?", "feeds": "Viability", "answer": null },
+    { "id": "Q5", "question": "What is your sustainable competitive advantage? If you don't have one, could you get one?", "feeds": "Viability", "answer": null },
+    { "id": "Q6", "question": "If the cash problem were fixed tomorrow, would the business make money? Why?", "feeds": "Viability", "answer": null },
+    { "id": "Q7", "question": "Where has the cash been going over the last 12 months?", "feeds": "Both", "answer": null },
+    { "id": "Q8", "question": "Could the business operate with a smaller overhead? What would you cut?", "feeds": "Viability", "answer": null },
+    { "id": "Q9", "question": "What does the pipeline, work in progress or order book look like for the next 3 months?", "feeds": "Viability", "answer": null },
+    { "id": "Q10", "question": "Is the business capital-intensive with thin margins, or carrying a large fixed overhead?", "feeds": "Viability", "answer": null }
+  ]
+}
