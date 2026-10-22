@@ -105,9 +105,13 @@ def load_data(base, cfg):
     ends = month_ends(months[-1]["month"], len(months))
     org = (load("organisation").get("Organisations") or [{}])[0].get("Name", "Unknown")
     v5 = next((i for i in cfg["indicators"] if i["id"] == "V5"), {})
+    # Imported test businesses (import_exports.py) record which aged reports were missing
+    aged_status = raw / "aged_status.json"
+    aged_missing = json.loads(aged_status.read_text()).get("missing", []) if aged_status.exists() else []
     return {
         "base": base,
         "org": org,
+        "aged_missing": aged_missing,
         "months": months,
         "pl": flatten(load("profit_and_loss"), ends),
         "bs": flatten(load("balance_sheet"), ends),
@@ -327,6 +331,9 @@ def d7_creditor_days(d, ind):
 
 
 def overdue_share(d, kind, label):
+    if kind in d.get("aged_missing", []):
+        return not_assessed(f"No aged {'receivables' if kind == 'ACCREC' else 'payables'} report was provided",
+                            short="No aged report")
     total, over = unpaid_invoices(d, kind)
     if total <= 0:
         return forced("Green", "None unpaid", f"No unpaid {label}", case="nothing_unpaid")
