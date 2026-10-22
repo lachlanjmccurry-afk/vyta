@@ -34,3 +34,6 @@ desktop.ini
 
 # Design mock-up screenshots (show business figures)
 Screenshot*.png
+
+# Financial statements dropped in for testing (may be real business data): never commit
+Data Exports/
