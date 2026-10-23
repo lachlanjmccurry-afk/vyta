@@ -1,5 +1,6 @@
 # Vyta - packages for the .venv (Python 3.14). Install with:
 #   .venv\Scripts\python.exe -m pip install -r requirements.txt
+# Updated 23 Oct 2026: folder tidy-up (engine/, app/, settings/ ...). Changing this file restarts the online demo.
 requests==2.34.2
 python-dotenv==1.2.4
 openpyxl==3.1.5
