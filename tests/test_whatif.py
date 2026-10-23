@@ -8,6 +8,8 @@ that no levers gives exactly the real scores, and the plain-English sentence. Us
 the real-business checks are skipped unless the data folders have been built.
 """
 
+import _setup  # noqa: F401  (code folders + work from the vyta folder)
+import paths
 import contextlib
 import io
 import unittest
@@ -19,7 +21,7 @@ from test_score import CFG, IND, business, series
 
 WORDING = score.load_wording()
 TEXT = WORDING["whatif_page"]
-FOLDERS = [f for f in ("data", "data_healthy", "data_stressed") if (Path(f) / "model" / "monthly_summary.csv").exists()]
+FOLDERS = [f for f in (paths.XERO.as_posix(), paths.TEST_HEALTHY.as_posix(), paths.TEST_STRESSED.as_posix()) if (Path(f) / "model" / "monthly_summary.csv").exists()]
 
 
 def scored(d):

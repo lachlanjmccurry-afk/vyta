@@ -17,6 +17,8 @@ from datetime import date, timedelta
 from pathlib import Path
 
 import requests
+
+import paths
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -26,7 +28,7 @@ CLIENT_SECRET = os.getenv("XERO_CLIENT_SECRET", "").strip()
 TOKEN_URL = "https://identity.xero.com/connect/token"
 API = "https://api.xero.com/api.xro/2.0"
 TOKEN_FILE = Path("tokens.json")
-OUT_DIR = Path("data") / "raw"
+OUT_DIR = paths.XERO / "raw"
 PAUSE = 1.1  # Xero allows 60 calls/minute - this keeps us safely under
 
 

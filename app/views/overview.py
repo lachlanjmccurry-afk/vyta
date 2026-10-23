@@ -57,7 +57,7 @@ def list_card(key, title, items, empty, link=None):
             md(f"<div class='vy-cardhead'>{esc(title)}</div>")
         if link:
             with right:
-                st.page_link("views/details.py", label=link)
+                st.page_link("app/views/details.py", label=link)
         md(bullet_list(items) if items else f"<div class='vy-sub'>{esc(empty)}</div>")
 
 
@@ -85,7 +85,7 @@ with st.container(key="vy-pathway"):
            + (f"<div class='o'>{esc(text.get('override', ''))} {esc(' '.join(applied))}</div>" if applied else "")
            + "</div>")
     with right:
-        st.page_link("views/get_help.py", label=f"{text.get('pathway_button', 'See matched advisers')} →")
+        st.page_link("app/views/get_help.py", label=f"{text.get('pathway_button', 'See matched advisers')} →")
 
 left, right = st.columns(2, gap="medium")
 with left:

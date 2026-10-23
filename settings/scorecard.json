@@ -9,7 +9,7 @@
     "Save the file, then re-run score.py. If score.py says the file is broken, check for a missing comma or quote."
   ],
   "version": "v2",
-  "source": "vyta_scorecard_v2.xlsx",
+  "source": "docs/vyta_scorecard_v2.xlsx",
   "disclaimer": "Indicative early-warning signals only - not an insolvency determination or professional advice. Thresholds are working assumptions, not industry-calibrated benchmarks.",
 
   "points": {

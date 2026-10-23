@@ -29,9 +29,17 @@ All wording comes from wording.json, scorecard.json and firms.json; the theme is
 The online demo (demo_app.py) runs this same file in demo mode: test businesses only, no Refresh now.
 """
 
-import streamlit as st
+import sys
+from pathlib import Path
 
-import ui
+sys.path.insert(0, str(Path(__file__).resolve().parent / "engine"))
+import paths  # noqa: E402  (sets up the code folders and works from the vyta folder)
+
+paths.setup()
+
+import streamlit as st  # noqa: E402
+
+import ui  # noqa: E402
 
 st.set_page_config(page_title="Vyta", page_icon="assets/vyta_mark.png", layout="wide",
                    initial_sidebar_state="expanded", menu_items={})
@@ -43,15 +51,15 @@ if not folders:
     st.stop()
 
 MAIN = [
-    st.Page("views/overview.py", title="Overview", icon=":material/grid_view:", default=True),
-    st.Page("views/details.py", title="Details", icon=":material/notes:"),
-    st.Page("views/get_help.py", title="Get help", icon=":material/group:"),
+    st.Page("app/views/overview.py", title="Overview", icon=":material/grid_view:", default=True),
+    st.Page("app/views/details.py", title="Details", icon=":material/notes:"),
+    st.Page("app/views/get_help.py", title="Get help", icon=":material/group:"),
 ]
 MORE = [
-    st.Page("views/cash.py", title="Cash", icon=":material/payments:"),
-    st.Page("views/whatif.py", title="What if?", icon=":material/tune:"),
-    st.Page("views/history.py", title="History", icon=":material/history:"),
-    st.Page("views/owner_questions.py", title="Owner questions", icon=":material/help:"),
+    st.Page("app/views/cash.py", title="Cash", icon=":material/payments:"),
+    st.Page("app/views/whatif.py", title="What if?", icon=":material/tune:"),
+    st.Page("app/views/history.py", title="History", icon=":material/history:"),
+    st.Page("app/views/owner_questions.py", title="Owner questions", icon=":material/help:"),
 ]
 page = st.navigation(MAIN + MORE, position="hidden")
 

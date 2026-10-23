@@ -6,6 +6,8 @@ Run with:   py -m unittest test_cashflow -v
 Uses only made-up numbers. Never touches Xero.
 """
 
+import _setup  # noqa: F401  (code folders + work from the vyta folder)
+import paths
 import unittest
 
 from cashflow import STEPS, cash_bridge

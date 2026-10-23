@@ -22,6 +22,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+import paths
 import score
 
 # (background, text) colours shared with the dashboard
@@ -230,7 +231,7 @@ def build_pdf(run):
 
 
 def main():
-    base = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data")
+    base = Path(sys.argv[1]) if len(sys.argv) > 1 else paths.XERO
     run = score.compute(base)
     out = base / "model" / "vyta_report.pdf"
     try:

@@ -23,9 +23,10 @@ import sys
 from datetime import date
 from pathlib import Path
 
+import paths
 import score
 
-SOURCE = Path("Data Exports")
+SOURCE = paths.EXPORTS
 SETTINGS = SOURCE / "benchmark.json"
 RESULTS = SOURCE / "benchmark_results.json"
 FLAGGED = ("Moderate", "High")
@@ -36,7 +37,7 @@ def months_before(month, when):
 
 
 def check(letter, when, cfg, wording):
-    folder = Path(f"data_business_{letter.lower()}")
+    folder = paths.imported(letter)
     if not (folder / "model" / "monthly_summary.csv").exists():
         return None
     with contextlib.redirect_stdout(io.StringIO()):

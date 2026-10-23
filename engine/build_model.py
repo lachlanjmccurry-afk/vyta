@@ -19,6 +19,8 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+import paths
+
 try:
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
@@ -27,8 +29,8 @@ except ImportError:
     print("\n[STOPPED] One package is missing. Run:  pip install openpyxl   then try again.")
     sys.exit(1)
 
-RAW = Path("data") / "raw"
-OUT = Path("data") / "model"
+RAW = paths.XERO / "raw"
+OUT = paths.XERO / "model"
 
 MONEY = '$#,##0;($#,##0);"-"'
 FONT = Font(name="Arial", size=10)
@@ -376,7 +378,7 @@ def write_csv(path, months, ato_names):
 
 def main():
     global RAW, OUT
-    base = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data")
+    base = Path(sys.argv[1]) if len(sys.argv) > 1 else paths.XERO
     RAW, OUT = base / "raw", base / "model"
 
     end = period_end()

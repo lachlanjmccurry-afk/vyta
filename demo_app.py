@@ -10,8 +10,15 @@ Refresh now, never contacts Xero. See demo.py.
 
 import os
 import runpy
+import sys
+from pathlib import Path
 
-import demo
+sys.path.insert(0, str(Path(__file__).resolve().parent / "engine"))
+import paths  # noqa: E402  (sets up the code folders and works from the vyta folder)
+
+paths.setup()
+
+import demo  # noqa: E402
 
 os.environ[demo.FLAG] = "1"
 demo.ensure_data()

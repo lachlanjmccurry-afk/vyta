@@ -9,6 +9,8 @@ checks the Overview numbers match score.py, the Details tabs and rows, the Get h
 windows, What if?, History, Last updated and Refresh now. Skipped if no data folders have been built.
 """
 
+import _setup  # noqa: F401  (code folders + work from the vyta folder)
+import paths
 import contextlib
 import io
 import unittest
@@ -21,13 +23,13 @@ import firms
 import score
 import ui
 
-PAGES = ["views/overview.py", "views/details.py", "views/get_help.py", "views/cash.py", "views/whatif.py",
-         "views/history.py", "views/owner_questions.py"]
+PAGES = ["app/views/overview.py", "app/views/details.py", "app/views/get_help.py", "app/views/cash.py", "app/views/whatif.py",
+         "app/views/history.py", "app/views/owner_questions.py"]
 FOLDERS = ui.data_folders()
 
 
 def app(folder):
-    at = AppTest.from_file("dashboard.py", default_timeout=60)
+    at = AppTest.from_file(str(paths.ROOT / "dashboard.py"), default_timeout=60)
     at.session_state["folder"] = folder
     return at
 
@@ -91,7 +93,7 @@ class TestPagesLoad(unittest.TestCase):
             with self.subTest(folder=folder):
                 run = scored(folder)
                 at = app(folder)
-                at.switch_page("views/details.py").run()
+                at.switch_page("app/views/details.py").run()
                 self.check(at, folder)
                 for kind in ("distress", "viability"):
                     if kind == "viability":
@@ -113,7 +115,7 @@ class TestPagesLoad(unittest.TestCase):
         run = scored(folder)
         data = firms.load()
         at = app(folder)
-        at.switch_page("views/get_help.py").run()
+        at.switch_page("app/views/get_help.py").run()
         self.check(at, "get help")
         text = page_text(at)
         everyone = firms.matches(run, data)
@@ -138,7 +140,7 @@ class TestPagesLoad(unittest.TestCase):
         for folder in FOLDERS:
             with self.subTest(folder=folder):
                 at = app(folder)
-                at.switch_page("views/whatif.py").run()
+                at.switch_page("app/views/whatif.py").run()
                 at.slider(key="wi_overhead").set_value(20).run()
                 at.slider(key="wi_debtor_days").set_value(30).run()
                 at.toggle(key="wi_ato_plan").set_value(True).run()
@@ -150,7 +152,7 @@ class TestPagesLoad(unittest.TestCase):
 
     def test_cash_page_has_waterfall(self):
         at = app(FOLDERS[0])
-        at.switch_page("views/cash.py").run()
+        at.switch_page("app/views/cash.py").run()
         self.assertTrue(at.get("plotly_chart"))
 
     def test_every_page_shows_last_updated(self):
@@ -167,7 +169,7 @@ class TestPagesLoad(unittest.TestCase):
                 snap(datetime(2026, 10, 9, 7, 0), {"D1": "Green", "D2": "Red"}, 65.0)]
         with mock.patch("snapshots.load", return_value=fake):
             at = app(FOLDERS[0])
-            at.switch_page("views/history.py").run()
+            at.switch_page("app/views/history.py").run()
             self.check(at, "history")
             text = page_text(at)
             self.assertIn("What changed since last time", text)

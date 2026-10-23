@@ -7,6 +7,8 @@ Uses small made-up runs (no data folders needed). Also checks every listing in f
 obviously fictional: reserved 5550 phone numbers and .example email addresses.
 """
 
+import _setup  # noqa: F401  (code folders + work from the vyta folder)
+import paths
 import itertools
 import re
 import unittest

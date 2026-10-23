@@ -8,6 +8,8 @@ so the sparklines can never disagree with the scores. The real-business checks a
 unless data, data_healthy and data_stressed have been built.
 """
 
+import _setup  # noqa: F401  (code folders + work from the vyta folder)
+import paths
 import contextlib
 import io
 import unittest
@@ -66,7 +68,7 @@ class TestSeries(unittest.TestCase):
 class TestMatchesScores(unittest.TestCase):
 
     def test_latest_point_is_the_scored_value(self):
-        folders = [f for f in ("data", "data_healthy", "data_stressed")
+        folders = [f for f in (paths.XERO.as_posix(), paths.TEST_HEALTHY.as_posix(), paths.TEST_STRESSED.as_posix())
                    if (Path(f) / "model" / "monthly_summary.csv").exists()]
         if not folders:
             self.skipTest("No built data folders")

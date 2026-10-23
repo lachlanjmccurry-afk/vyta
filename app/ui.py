@@ -24,6 +24,7 @@ from pathlib import Path
 import streamlit as st
 
 import demo
+import paths
 import score
 import snapshots
 import sync
@@ -286,11 +287,13 @@ CSS = f"""
 # ---------- loading ----------
 
 def data_folders():
-    """Folders that build_model.py has already processed, e.g. data, data_healthy, data_stressed."""
-    folders = [p.name for p in Path(".").iterdir() if (p / "model" / "monthly_summary.csv").exists()]
+    """Business folders that build_model.py has already processed, e.g. businesses/xero, businesses/test_healthy."""
+    if not paths.BUSINESSES.exists():
+        return []
+    folders = [p.as_posix() for p in paths.BUSINESSES.iterdir() if (p / "model" / "monthly_summary.csv").exists()]
     if demo.is_demo():                          # online demo: only the made-up test businesses
         folders = [f for f in folders if f in demo.FOLDERS]
-    return sorted(folders, key=lambda name: (name != "data", name))
+    return sorted(folders, key=lambda f: (not paths.same(f, paths.XERO), f))
 
 
 def org_name(folder):
@@ -328,7 +331,7 @@ def wording():
 
 
 def is_xero(folder):
-    return Path(folder).name == sync.XERO_FOLDER
+    return paths.same(folder, sync.XERO_FOLDER)
 
 
 # ---------- small pieces ----------
@@ -462,7 +465,7 @@ def refresh(folder):
     """Run sync.py for one folder in its own process (so a crash can't take the dashboard down).
     Returns (worked, plain-English message)."""
     try:
-        done = subprocess.run([sys.executable, "sync.py", str(folder)], cwd=sync.HERE, capture_output=True,
+        done = subprocess.run([sys.executable, "vyta.py", "refresh", str(folder)], cwd=paths.ROOT, capture_output=True,
                               text=True, encoding="utf-8", errors="replace", timeout=900,
                               env={**os.environ, "PYTHONIOENCODING": "utf-8"})
     except subprocess.TimeoutExpired:

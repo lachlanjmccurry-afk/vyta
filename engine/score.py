@@ -22,6 +22,8 @@ import json
 import re
 import sys
 import textwrap
+
+import paths
 from datetime import date
 from pathlib import Path
 
@@ -30,8 +32,8 @@ from build_model import (BOLD, FONT, HEAD_FILL, HEAD_FONT, flatten, month_ends, 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 
-CONFIG = Path("scorecard.json")
-WORDING = Path("wording.json")
+CONFIG = paths.SCORECARD
+WORDING = paths.WORDING
 NOT_ASSESSED = "Not assessed"
 OWNER_QUESTION = "Not assessed - owner question"
 FILLS = {
@@ -54,7 +56,7 @@ NOT_BANK_PATTERN = re.compile(r"owner|director|shareholder|related|drawings|fund
 
 def load_config():
     if not CONFIG.exists():
-        stop("Can't find scorecard.json in this folder.")
+        stop(f"Can't find {CONFIG}.")
     try:
         cfg = json.loads(CONFIG.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
@@ -1019,7 +1021,7 @@ def score_data(d, cfg, wording):
 
 
 def main():
-    base = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data")
+    base = Path(sys.argv[1]) if len(sys.argv) > 1 else paths.XERO
     run = compute(base)
     d, cfg, results, scores, bands = run["d"], run["cfg"], run["results"], run["scores"], run["bands"]
     override_notes, pathway, summary, problems = (run["override_notes"], run["pathway"], run["summary"],

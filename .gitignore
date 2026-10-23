@@ -9,10 +9,11 @@ tokens.json
 *.key
 .streamlit/secrets.toml
 
-# ---- Business data pulled from Xero, and everything made from it ----
-# (data\raw = raw Xero downloads, data\model = models, scores and PDF reports)
+# ---- Business data: every business folder (Xero, test, imported) and Data Exports. Never commit ----
+# (<folder>\raw = raw downloads, <folder>\model = models, scores and PDF reports)
+businesses/
+# Old locations (before the Oct 2026 tidy-up), kept so nothing slips through
 data/
-# Synthetic test businesses - recreate with:  py make_test_data.py
 data_*/
 
 # ---- Python environment and caches ----
@@ -34,6 +35,18 @@ desktop.ini
 
 # Design mock-up screenshots (show business figures)
 Screenshot*.png
+docs/design-mockups/
 
 # Financial statements dropped in for testing (may be real business data): never commit
 Data Exports/
+
+# Screenshots of other websites used as design references: never commit
+Vyta Website design/
+
+# Owner's own documents: kept on this laptop only (the GitHub repo is public)
+AGENTS.md
+assets/Vyta Logo.png
+docs/*.pdf
+docs/notes/
+docs/inspirationlinks.md
+docs/Session Summary's/

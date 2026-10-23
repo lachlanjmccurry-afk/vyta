@@ -22,6 +22,7 @@ import json
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+import paths
 from build_model import month_ends
 
 PERIOD_END = date(2026, 9, 30)
@@ -193,7 +194,7 @@ def invoices(total_due, buckets, kind, prefix):
 
 
 def write_business(folder, org_name, months, aged):
-    if folder.name == "data":
+    if paths.same(folder, paths.XERO):
         raise SystemExit("[STOPPED] Refusing to overwrite the real data folder.")
     raw = folder / "raw"
     raw.mkdir(parents=True, exist_ok=True)
@@ -229,9 +230,10 @@ def write_business(folder, org_name, months, aged):
 
 def main():
     print("Creating synthetic test businesses...")
-    write_business(Path("data_healthy"), "TEST - Healthy Co (synthetic)", *healthy())
-    write_business(Path("data_stressed"), "TEST - Stressed Co (synthetic)", *stressed())
-    print("\n[DONE] Next:  py build_model.py data_healthy   and   py build_model.py data_stressed")
+    write_business(paths.TEST_HEALTHY, "TEST - Healthy Co (synthetic)", *healthy())
+    write_business(paths.TEST_STRESSED, "TEST - Stressed Co (synthetic)", *stressed())
+    print(f"\n[DONE] Next:  py vyta.py refresh {paths.TEST_HEALTHY.as_posix()}   and   "
+          f"py vyta.py refresh {paths.TEST_STRESSED.as_posix()}")
 
 
 if __name__ == "__main__":

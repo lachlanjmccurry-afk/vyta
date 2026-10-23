@@ -8,6 +8,8 @@ pull replaced by a copy of their raw files - so it never touches  data\\  or Xer
 tests are skipped unless  data_healthy  and  data_stressed  have been built (py make_test_data.py).
 """
 
+import _setup  # noqa: F401  (code folders + work from the vyta folder)
+import paths
 import contextlib
 import io
 import json
@@ -23,7 +25,7 @@ import score
 import snapshots
 import sync
 
-HEALTHY, STRESSED = Path("data_healthy"), Path("data_stressed")
+HEALTHY, STRESSED = paths.TEST_HEALTHY, paths.TEST_STRESSED
 BUILT = (HEALTHY / "raw").exists() and (STRESSED / "raw").exists()
 
 
@@ -199,8 +201,8 @@ class TestSnapshots(unittest.TestCase):
                     self.assertIn("connect_xero.py", out.getvalue())
 
     def test_only_the_data_folder_uses_xero(self):
-        self.assertIs(sync.default_fetch(Path("data")), sync.xero_steps)
-        self.assertIs(sync.default_fetch(Path("data_healthy")), sync.copy_steps)
+        self.assertIs(sync.default_fetch(paths.XERO), sync.xero_steps)
+        self.assertIs(sync.default_fetch(paths.TEST_HEALTHY), sync.copy_steps)
         self.assertIs(sync.default_fetch(Path("somewhere") / "client"), sync.copy_steps)
 
 

@@ -45,7 +45,9 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-SOURCE = Path("Data Exports")
+from paths import EXPORTS, ROOT, imported
+
+SOURCE = EXPORTS
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 MONTHS = {m.lower(): i for i, m in enumerate(calendar.month_abbr) if m}
 MONTHS.update({m.lower(): i for i, m in enumerate(calendar.month_name) if m})
@@ -339,7 +341,7 @@ def import_business(letter, paths):
 
     end = month_end(months[0])
     as_at = as_at or end
-    out = Path(f"data_business_{letter.lower()}")
+    out = imported(letter)
     raw = out / "raw"
     raw.mkdir(parents=True, exist_ok=True)
     (raw / "profit_and_loss.json").write_text(json.dumps(report_json("Profit and Loss", months, pl_secs), indent=1))
@@ -383,15 +385,16 @@ def main(args):
     made = [f for f in (import_business(letter, paths) for letter, paths in zip(LETTERS, groups)) if f]
     print("\nBuilding and scoring:")
     for folder in made:
-        for script in ("build_model.py", "score.py"):
-            res = subprocess.run([sys.executable, script, str(folder)], capture_output=True, text=True)
+        for script in ("build_model", "score"):
+            res = subprocess.run([sys.executable, "vyta.py", "run", script, str(folder)], cwd=ROOT,
+                                 capture_output=True, text=True)
             if res.returncode != 0:
                 print(f"  {folder}: {script} stopped:\n{res.stdout[-800:]}{res.stderr[-800:]}")
                 break
         else:
             print(f"  {folder}: done")
     print(f"\n[DONE] Imported {len(made)} business(es). They appear in the dashboard's business picker "
-          "(py -m streamlit run dashboard.py).")
+          "(py vyta.py dashboard).")
 
 
 if __name__ == "__main__":

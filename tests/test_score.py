@@ -21,6 +21,8 @@ What's checked:
 Uses only made-up numbers and local files. Never touches Xero.
 """
 
+import _setup  # noqa: F401  (code folders + work from the vyta folder)
+import paths
 import copy
 import re
 import unittest
@@ -480,7 +482,7 @@ class TestConfig(unittest.TestCase):
                     self.assertGreaterEqual(ind["amber"], ind["red"])
 
     def test_every_scorecard_indicator_is_configured_and_calculated(self):
-        md = Path("SCORECARD.md")
+        md = Path("docs/SCORECARD.md")
         if not md.exists():
             self.skipTest("SCORECARD.md not in folder")
         spec_ids = set(re.findall(r"^\| ([DV]\d+) \|", md.read_text(encoding="utf-8"), re.M))
@@ -673,7 +675,7 @@ class TestTableLabels(unittest.TestCase):
                       business(series(cost_of_sales=0)), business(series(revenue=0))]
         for d in edge_cases:
             out += score.assess(d, CFG)
-        for folder in ("data", "data_healthy", "data_stressed"):
+        for folder in (paths.XERO.as_posix(), paths.TEST_HEALTHY.as_posix(), paths.TEST_STRESSED.as_posix()):
             if (Path(folder) / "model" / "monthly_summary.csv").exists():
                 out += score.assess(score.load_data(Path(folder), CFG), CFG)
         return out
@@ -704,10 +706,10 @@ class TestBusinesses(unittest.TestCase):
                 for kind in ("distress", "viability")}
 
     def test_healthy_business(self):
-        self.assertEqual(self.run_folder("data_healthy"), {"distress": "Low", "viability": "Strong"})
+        self.assertEqual(self.run_folder(paths.TEST_HEALTHY.as_posix()), {"distress": "Low", "viability": "Strong"})
 
     def test_stressed_business(self):
-        self.assertEqual(self.run_folder("data_stressed"), {"distress": "High", "viability": "Weak"})
+        self.assertEqual(self.run_folder(paths.TEST_STRESSED.as_posix()), {"distress": "High", "viability": "Weak"})
 
 
 if __name__ == "__main__":

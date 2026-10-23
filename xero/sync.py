@@ -30,8 +30,10 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-XERO_FOLDER = "data"
+import paths
+
+HERE = paths.ROOT
+XERO_FOLDER = paths.XERO
 STAGE = "_sync"
 LOCK = "_sync.lock"
 LOG = "sync_log.txt"
@@ -137,7 +139,7 @@ def copy_steps(base, raw):
 
 def default_fetch(base):
     """Only the data folder is connected to Xero; test folders are rebuilt from their saved files."""
-    return xero_steps if Path(base).name == XERO_FOLDER else copy_steps
+    return xero_steps if paths.same(base, XERO_FOLDER) else copy_steps
 
 
 def check_pull(raw):
@@ -236,11 +238,11 @@ def run(base, fetch=None):
 
 
 def main():
-    os.chdir(HERE)          # Task Scheduler starts us elsewhere; the scripts expect to be in the project folder
+    os.chdir(HERE)          # Task Scheduler starts us elsewhere; paths are relative to the vyta folder
     base = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(XERO_FOLDER)
     worked, _ = run(base)
     if worked:
-        print(f"\nLog: {(base / LOG).resolve()}\nNext: open the dashboard with  py -m streamlit run dashboard.py")
+        print(f"\nLog: {(base / LOG).resolve()}\nNext: open the dashboard with  py vyta.py dashboard")
     sys.exit(0 if worked else 1)
 
 

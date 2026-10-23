@@ -8,6 +8,28 @@ Vyta is a read-only tool. It connects to Xero and scores Australian small busine
 
 The owner is not a developer. Explain what you're doing in plain English, and **ask before doing anything risky** (deleting or overwriting files, installing things outside the `.venv`, or anything that touches Xero).
 
+## Folder layout (tidied 23 Oct 2026)
+
+Run everything through **`vyta.py`** from the vyta folder (`py vyta.py` lists commands: dashboard, demo, refresh,
+connect, test, benchmark, import, test-data, report, logos, `run <script> [args]`). It puts the code folders on
+`sys.path` and works from the vyta folder, so modules still import each other by plain name (`import score`).
+
+| Folder | Contents |
+|---|---|
+| `engine\` | score, build_model, cashflow, trends, whatif, snapshots, firms, report_pdf, **paths.py** (every location) |
+| `app\` | ui, charts, demo, `views\` (dashboard pages) |
+| `xero\` | connect_xero, pull_data, sync |
+| `tools\` | make_test_data, import_exports, benchmark, make_logo_assets |
+| `tests\` | test_*.py; each starts with `import _setup` (`tests\_setup.py`). Run `py vyta.py test` |
+| `settings\` | scorecard.json, wording.json, firms.json |
+| `businesses\` | **gitignored**: `xero\` (live Xero, was `data\`), `test_healthy\`, `test_stressed\`, `business_a\`…, `Data Exports\` |
+| `docs\` | SCORECARD.md, vyta_scorecard_v2.xlsx, plus the owner's own docs (untracked: keep them out of the public repo) |
+
+- **Never hard-code a location**: use `paths.py` (`paths.XERO`, `paths.TEST_HEALTHY`, `paths.SCORECARD`, `paths.EXPORTS`, `paths.imported("A")`). Business folders are identified by their posix path, e.g. `businesses/test_healthy`.
+- Must stay at the top: `dashboard.py`, `demo_app.py`, `requirements.txt`, `.streamlit\`, `.devcontainer\` (Streamlit Cloud). Both apps start with a 3-line block that imports `engine\paths.py` and calls `paths.setup()`.
+- Task Scheduler "Vyta daily sync" runs `.venv\Scripts\pythonw.exe "C:\Users\LMcCurry\vyta\vyta.py" refresh` in the vyta folder.
+- The rest of this file was written before the tidy-up: read `data\` as `businesses\xero\`, `data_healthy`/`data_stressed` as `businesses\test_healthy`/`test_stressed`, `data_business_a` as `businesses\business_a`, and `py <script>.py` as `py vyta.py run <script>`.
+
 ## Hard rules
 
 - **Read-only towards Xero.** Never write anything back to Xero. Never add write scopes (only `*.read` scopes are allowed) and never call an API with POST, PUT or DELETE, other than the OAuth token endpoint.
@@ -52,9 +74,9 @@ The owner is not a developer. Explain what you're doing in plain English, and **
 
 The pipeline runs in order: `connect_xero.py` (once) → `pull_data.py` → `build_model.py` → `score.py`. `sync.py` runs the last three for you (safely) and saves a history snapshot. `build_model.py` and `score.py` both take an optional data folder (default `data`), e.g. `py build_model.py data_stressed` and then `py score.py data_stressed`. `build_model.py` works out the number of months from the P&L report's header row, so it handles 12 or 24 months.
 
-**Daily refresh:** Windows Task Scheduler task **"Vyta daily sync"** (current user, no admin) runs `.venv\Scripts\pythonw.exe sync.py` in the project folder at 7am daily. If the laptop was off it runs at the next chance, and it is stopped after 30 minutes. To check it: look at `data\sync_log.txt`, or run `schtasks /Query /TN "Vyta daily sync" /V /FO LIST` (Last Result 0 = worked, 1 = stopped, see log). Turn it off: `schtasks /Change /TN "Vyta daily sync" /DISABLE` (`/ENABLE` to turn it back on). Remove it: `schtasks /Delete /TN "Vyta daily sync" /F`. Created with PowerShell `Register-ScheduledTask` (`-Daily -At 7am`, `-StartWhenAvailable`).
+**Daily refresh:** Windows Task Scheduler task **"Vyta daily sync"** (current user, no admin) runs `.venv\Scripts\pythonw.exe vyta.py refresh` in the project folder at 7am daily. If the laptop was off it runs at the next chance, and it is stopped after 30 minutes. To check it: look at `data\sync_log.txt`, or run `schtasks /Query /TN "Vyta daily sync" /V /FO LIST` (Last Result 0 = worked, 1 = stopped, see log). Turn it off: `schtasks /Change /TN "Vyta daily sync" /DISABLE` (`/ENABLE` to turn it back on). Remove it: `schtasks /Delete /TN "Vyta daily sync" /F`. Created with PowerShell `Register-ScheduledTask` (`-Daily -At 7am`, `-StartWhenAvailable`).
 
-**Tests:** `py -m unittest test_score test_cashflow test_trends test_whatif test_sync test_firms test_demo test_dashboard -v` (standard library `unittest`; pytest isn't installed). `test_dashboard` opens every page for every built data folder. To run one test: `py -m unittest test_score.TestThresholds.test_D7`. `test_score.py` builds a small made-up business for each indicator that lands on either side of the `scorecard.json` thresholds, so the tests follow threshold edits automatically. When adding an indicator, add a builder to `BUILDERS`; `test_every_indicator_has_a_threshold_test` fails until you do. The `TestBusinesses` tests are skipped unless `data_healthy` and `data_stressed` have been built.
+**Tests:** `py vyta.py test` (standard library `unittest`; pytest isn't installed). `test_dashboard` opens every page for every built data folder. To run one test: `py -m unittest test_score.TestThresholds.test_D7`. `test_score.py` builds a small made-up business for each indicator that lands on either side of the `scorecard.json` thresholds, so the tests follow threshold edits automatically. When adding an indicator, add a builder to `BUILDERS`; `test_every_indicator_has_a_threshold_test` fails until you do. The `TestBusinesses` tests are skipped unless `data_healthy` and `data_stressed` have been built.
 
 Expected results (as of 9 Oct 2026):
 - Healthy test business → Low/Strong ("Healthy"), High confidence.

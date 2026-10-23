@@ -10,7 +10,9 @@ Read-only. Never contacts Xero.
 import json
 from pathlib import Path
 
-FIRMS = Path("firms.json")
+import paths
+
+FIRMS = paths.FIRMS
 FLAGGED = ("Red", "Amber")
 
 

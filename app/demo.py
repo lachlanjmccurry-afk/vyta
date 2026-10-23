@@ -14,8 +14,10 @@ import os
 import threading
 from pathlib import Path
 
+import paths
+
 FLAG = "VYTA_DEMO"
-FOLDERS = ("data_healthy", "data_stressed")
+FOLDERS = (paths.TEST_HEALTHY.as_posix(), paths.TEST_STRESSED.as_posix())
 _lock = threading.Lock()
 
 

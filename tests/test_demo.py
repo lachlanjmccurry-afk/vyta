@@ -7,6 +7,8 @@ Checks the demo builds the made-up businesses from nothing (in a throw-away fold
 Community Cloud), shows only those businesses, hides Refresh now, and that every page loads.
 """
 
+import _setup  # noqa: F401  (code folders + work from the vyta folder)
+import paths
 import os
 import shutil
 import tempfile
@@ -17,9 +19,9 @@ from streamlit.testing.v1 import AppTest
 
 import demo
 
-HERE = Path(__file__).resolve().parent
-PAGES = ["views/overview.py", "views/details.py", "views/get_help.py", "views/cash.py", "views/whatif.py",
-         "views/history.py", "views/owner_questions.py"]
+HERE = paths.ROOT
+PAGES = ["app/views/overview.py", "app/views/details.py", "app/views/get_help.py", "app/views/cash.py", "app/views/whatif.py",
+         "app/views/history.py", "app/views/owner_questions.py"]
 
 
 class TestDemoData(unittest.TestCase):
@@ -27,16 +29,17 @@ class TestDemoData(unittest.TestCase):
     def test_builds_the_test_businesses_from_nothing(self):
         tmp = Path(tempfile.mkdtemp())
         for name in ("scorecard.json", "wording.json"):
-            shutil.copy(HERE / name, tmp / name)
+            (tmp / paths.SETTINGS).mkdir(exist_ok=True)
+            shutil.copy(HERE / paths.SETTINGS / name, tmp / paths.SETTINGS / name)
         try:
             os.chdir(tmp)
             demo.ensure_data()
             for folder in demo.FOLDERS:
                 self.assertTrue((tmp / folder / "model" / "monthly_summary.csv").exists(), folder)
                 self.assertEqual(len(list((tmp / folder / "history").glob("*.json"))), 1, folder)
-            self.assertFalse((tmp / "data").exists())          # never creates or touches the real data folder
+            self.assertFalse((tmp / paths.XERO).exists())          # never creates or touches the real data folder
             demo.ensure_data()                                  # second call: nothing to do
-            self.assertEqual(len(list((tmp / "data_healthy" / "history").glob("*.json"))), 1)
+            self.assertEqual(len(list((tmp / paths.TEST_HEALTHY / "history").glob("*.json"))), 1)
         finally:
             os.chdir(HERE)
             shutil.rmtree(tmp, ignore_errors=True)
@@ -48,7 +51,7 @@ class TestDemoApp(unittest.TestCase):
         os.environ.pop(demo.FLAG, None)                         # don't leave demo mode on for other tests
 
     def app(self, page=None):
-        at = AppTest.from_file("demo_app.py", default_timeout=120)
+        at = AppTest.from_file(str(paths.ROOT / "demo_app.py"), default_timeout=120)
         if page:
             at.switch_page(page)
         return at.run()
