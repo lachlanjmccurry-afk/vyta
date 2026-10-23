@@ -108,6 +108,22 @@
       "red_no_assets": "The business has no assets recorded against debts of {total_liabilities}."
     },
 
+    "D14": {
+      "_also_available": "{sales} {normal} {month}",
+      "green": "Sales of {sales} in {month} are {value} of a normal month ({normal}), so trading is holding up. Keep an eye on any month that falls well below normal.",
+      "amber": "Sales of {sales} in {month} are only {value} of a normal month ({normal}; warning at {threshold}). Find out whether this is a one-off or the start of a slide.",
+      "red": "Sales of {sales} in {month} have collapsed to {value} of a normal month ({normal}; Red at {threshold}). A business that stops trading while it still owes money is a serious warning sign."
+    },
+
+    "D15": {
+      "_also_available": "{month} {liabilities}",
+      "green": "The books look up to date: every recent month has a normal level of sales and costs recorded.",
+      "green_up_to_date": "The books look up to date: every recent month to {month} has a normal level of sales and costs recorded.",
+      "amber": "Almost nothing was recorded in the books for {month}. Either trading has stopped or the books are behind. Bring them up to date so the other checks can be trusted.",
+      "amber_liabilities_in_debit": "Total liabilities are {liabilities} at {month}, which is below zero: some liability accounts are in debit (for example a loan account that's been overdrawn). The debt checks can't be relied on until this is fixed.",
+      "red": "Almost nothing has been recorded for {value} months in a row, to {month}. Either trading has stopped or the books haven't been kept. Not being able to produce up-to-date financial information is itself a recognised sign of insolvency."
+    },
+
     "V1": {
       "_also_available": "{net_assets} {total_assets}",
       "green": "Owners' equity is {value_pct} of total assets (net assets {net_assets}), a solid buffer to absorb a bad patch. Keeping profits in the business keeps it strong.",
@@ -205,7 +221,8 @@
   "data_confidence": {
     "High": "Based on a full {months} of {of} months of trading data.",
     "Medium": "Based on {months} of {of} months of trading data. Trends and yearly figures may shift as more months come in.",
-    "Low": "Only {months} of {of} months have trading activity, so these scores rest on limited data. Treat them as an early indication and re-check once more months are available."
+    "Low": "Only {months} of {of} months have trading activity, so these scores rest on limited data. Treat them as an early indication and re-check once more months are available.",
+    "Unreliable": "The books look incomplete: {reasons}. The scores may not show the real position until the books are brought up to date."
   },
 
   "_cash_page_help": "Dashboard Cash page. {start}/{end} = month names, {months} = months covered. Step names must match cashflow.py.",
@@ -263,7 +280,7 @@
     "not_answered": "Not answered yet",
     "waiting_title": "Indicators waiting on owner input",
     "waiting_none": "No indicators are waiting on owner input.",
-    "override_title": "Statutory demand override"
+    "override_title": "Overrides"
   },
 
   "_history_page_help": "Dashboard History page (snapshots saved by sync.py). Placeholders: {date} in 'one'; {before} and {after} (the two snapshot dates) in 'changes_sub' and 'changes_none'.",
@@ -307,6 +324,9 @@
     "more": "More tools",
     "connected_title": "Connected to Xero",
     "connected_text": "Read-only. Vyta never changes your books.",
+    "imported_title": "Imported data",
+    "imported_text": "Real figures from Xero Excel exports, anonymised. Not connected to Xero.",
+    "synced_imported": "Imported from Excel",
     "sample_title": "Sample data",
     "sample_text": "A made-up test business. Not connected to Xero.",
     "demo_title": "Demo version",
@@ -333,7 +353,7 @@
     "issues_none": "No indicators are flagged Red or Amber.",
     "working_title": "What's working",
     "working_none": "Nothing is rated Green yet.",
-    "override": "Statutory demand override:",
+    "override": "Override:",
     "footer": "Indicative early-warning signals based on Xero data, not an insolvency determination or professional advice."
   },
 
@@ -361,6 +381,7 @@
     "figures_title": "Figures used",
     "how": "How it's calculated:",
     "weight": "Weight in the score: {weight}",
+    "flag": "Warning flag: not part of the weighted score, but if it turns Red while debts can't be covered, Distress is set to High.",
     "no_trend": "No trend: {reason}."
   },
 

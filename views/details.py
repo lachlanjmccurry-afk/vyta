@@ -54,7 +54,9 @@ def body(r):
         meta.append(f"<div><div class='k'>{esc(text.get('figures_title', 'Figures used'))}</div>{note}"
                     f"<div class='vy-facts'>{pairs}</div></div>")
     parts.append(f"<div class='meta'>{''.join(meta)}</div>")
-    how = [text.get("weight", "Weight in the score: {weight}").format(weight=f"{ind['weight']:g}")]
+    how = [text.get("flag", "Warning flag: not part of the weighted score, but it can move Distress to High.")
+           if ind.get("flag_only") else
+           text.get("weight", "Weight in the score: {weight}").format(weight=f"{ind['weight']:g}")]
     if ind.get("calculation"):
         how.append(f"{text.get('how', 'How it is calculated:')} {ind['calculation']}")
     parts.append(f"<div class='how'>{esc(' · '.join(how))}</div>")

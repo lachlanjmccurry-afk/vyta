@@ -137,6 +137,21 @@ def b_v8(v, ind):
                            total_liabilities=5000 + 20000 / v))
 
 
+def b_d14(v, ind):
+    """12 normal months of $10,000 sales, then a latest month at v x normal."""
+    if v < 0:
+        return None
+    return business(series(13, revenue=[10000] * 12 + [v * 10000]))
+
+
+def b_d15(n, ind):
+    """A trading business whose last n months have nothing recorded."""
+    if n < 0 or n > 10:
+        return None
+    blank = lambda value: [value] * (15 - n) + [0] * n
+    return business(series(15, revenue=blank(10000), cost_of_sales=blank(4000), operating_expenses=blank(5000)))
+
+
 BUILDERS = {
     "D1": lambda v, ind: business(series(current_assets=v * 5000, current_liabilities=5000)),
     "D2": lambda v, ind: business(series(cash=v * 5000, debtors=0, current_liabilities=5000)),
@@ -151,6 +166,8 @@ BUILDERS = {
     "D11": b_d11,
     "D12": lambda v, ind: business(series(net_profit=v * 5000 / 12, current_liabilities=5000)),
     "D13": lambda v, ind: business(series(total_liabilities=v * 30000, total_assets=30000)),
+    "D14": b_d14,
+    "D15": b_d15,
     "V1": lambda v, ind: business(series(net_assets=v * 30000, total_assets=30000)),
     "V2": lambda v, ind: business(series(gross_profit=v * 10000)),
     "V3": b_v3,
@@ -375,6 +392,74 @@ class TestScoring(unittest.TestCase):
         bands, notes = self.override(None)
         self.assertEqual(bands["distress"], "Low")
         self.assertTrue(any("not answered" in n for n in notes))
+
+
+class TestStoppedTrading(unittest.TestCase):
+    """Sales collapse (D14) or empty books (D15) with debts the business can't cover forces Distress High."""
+
+    def run_month(self, d):
+        return score.score_data(d, CFG, WORDING)
+
+    def collapsed(self, **cols):
+        return business(series(13, revenue=[10000] * 12 + [0], **cols))
+
+    def test_collapse_with_unpaid_debts_forces_high(self):
+        run = self.run_month(self.collapsed(current_assets=[15000] * 12 + [2000], current_liabilities=8000))
+        self.assertEqual(run["bands"]["distress"], "High")
+        self.assertTrue(any(n.startswith("APPLIED") and "Trading has collapsed" in n for n in run["override_notes"]))
+
+    def test_collapse_with_debts_covered_does_not_force(self):
+        run = self.run_month(self.collapsed())
+        self.assertFalse(any(n.startswith("APPLIED") for n in run["override_notes"]))
+
+    def test_new_business_with_no_history_is_not_flagged(self):
+        d = business(series(12, revenue=[0] * 9 + [10000] * 3, cost_of_sales=[0] * 9 + [4000] * 3,
+                            operating_expenses=[0] * 9 + [5000] * 3))
+        self.assertEqual(score.quiet_months(d, 0.05), 0)
+        self.assertEqual(run_one(IND["D14"], d)["rating"], score.NOT_ASSESSED)
+
+
+class TestBooksUpToDate(unittest.TestCase):
+
+    def test_liabilities_in_debit_is_amber(self):
+        res = run_one(IND["D15"], business(series(total_liabilities=-5000)))
+        self.assertEqual(res["rating"], "Amber")
+        self.assertEqual(res["display"], "Liabilities < 0")
+
+    def test_unreliable_books_drop_confidence_to_low(self):
+        conf = score.data_confidence(business(series(total_liabilities=-5000)), CFG, WORDING)
+        self.assertEqual(conf["level"], "Low")
+        self.assertIn("in debit", conf["text"])
+        self.assertNotIn("{", conf["text"])
+
+    def test_blank_months_drop_confidence_to_low(self):
+        conf = score.data_confidence(b_d15(2, IND["D15"]), CFG, WORDING)
+        self.assertEqual(conf["level"], "Low")
+        self.assertIn("last 2 months", conf["text"])
+
+
+class TestSteadyBands(unittest.TestCase):
+    """Worse shows at once; better waits for a second month-end to agree."""
+
+    def fake(self, distress, viability):
+        bands = {"distress": distress, "viability": viability}
+        return {"bands": bands, "override_notes": [], "d": {"org": "Test"}, "pathway": "", "summary": "",
+                "pathway_label": "", "verdict": ""}
+
+    def test_improvement_is_held_for_a_month(self):
+        run = score.steady(self.fake("Moderate", "Weak"), self.fake("High", "Weak"), CFG, WORDING)
+        self.assertEqual(run["bands"]["distress"], "High")
+        self.assertEqual(run["unsteadied"]["bands"]["distress"], "Moderate")
+        self.assertTrue(any(n.startswith("HELD") for n in run["override_notes"]))
+
+    def test_worsening_shows_straight_away(self):
+        run = score.steady(self.fake("High", "Weak"), self.fake("Moderate", "Uncertain"), CFG, WORDING)
+        self.assertEqual(run["bands"], {"distress": "High", "viability": "Weak"})
+        self.assertNotIn("held", run)
+
+    def test_viability_improvement_is_held_too(self):
+        run = score.steady(self.fake("Low", "Strong"), self.fake("Low", "Uncertain"), CFG, WORDING)
+        self.assertEqual(run["bands"]["viability"], "Uncertain")
 
 
 # ---------- 4. config ----------

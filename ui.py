@@ -383,6 +383,14 @@ def logo_src():
         return None
 
 
+def is_imported(folder):
+    """Folders made by import_exports.py from Xero Excel exports (real figures, anonymised)."""
+    try:
+        return "IMPORTED FROM XERO EXCEL EXPORTS" in (Path(folder) / "raw" / "summary.txt").read_text()
+    except OSError:
+        return False
+
+
 def sidebar(main_pages, more_pages, current, folder):
     """Logo, the page links (the current one highlighted) and the 'Connected to Xero' box."""
     text = wording().get("shell", {})
@@ -401,6 +409,8 @@ def sidebar(main_pages, more_pages, current, folder):
             title, body = text.get("demo_title"), text.get("demo_text")
         elif is_xero(folder):
             title, body = text.get("connected_title"), text.get("connected_text")
+        elif is_imported(folder):
+            title, body = text.get("imported_title"), text.get("imported_text")
         else:
             title, body = text.get("sample_title"), text.get("sample_text")
         md(f"<div class='vy-connected'><b>{esc(title)}</b>{esc(body)}</div>")
@@ -423,7 +433,8 @@ def fill_topbar(cols, run, folder, on_help_page):
         end = d["months"][-1]["month"]
         md(f"<div class='vy-period'>{esc(text.get('period', '12 months to {end}').format(end=f'{end.day} {end:%b %Y}'))}</div>")
     with cols[3]:
-        status = text.get("synced_xero" if is_xero(folder) else "synced_sample", "")
+        status = text.get("synced_xero" if is_xero(folder) else "synced_imported" if is_imported(folder)
+                          else "synced_sample", "")
         md(f"<div class='vy-sync'><span class='dot'></span>{esc(status)}<small>{esc(last_updated_text(folder))}</small></div>")
     with cols[4]:
         if not demo.is_demo():                  # the online demo has nothing to refresh

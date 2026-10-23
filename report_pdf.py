@@ -193,7 +193,7 @@ def build_pdf(run):
     if run["summary"]:
         pathway_parts += [Spacer(1, 3), Paragraph(esc(run["summary"]), BASE)]
     applied = [n for n in run["override_notes"] if n.startswith("APPLIED")]
-    pathway_parts += [Spacer(1, 3), Paragraph("Statutory demand override: "
+    pathway_parts += [Spacer(1, 3), Paragraph("Overrides: "
                                               + esc(" ".join(applied or run["override_notes"]) or "none set up"),
                                               SMALL)]
     story += [boxed(pathway_parts, "#EEF2F8", width, border="#1F3864"), Spacer(1, 4)]

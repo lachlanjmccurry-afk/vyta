@@ -122,6 +122,7 @@ class TestScoring(unittest.TestCase):
         for folder in FOLDERS:
             with contextlib.redirect_stdout(io.StringIO()):
                 real = score.compute(folder)
+            real = real.get("unsteadied", real)  # what-if starts from this month's own (unheld) bands
             same = whatif.run(real, {})
             with self.subTest(folder=folder):
                 self.assertEqual(same["scores"], real["scores"])

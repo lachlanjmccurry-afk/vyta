@@ -10,6 +10,7 @@ from report_pdf import BAND_RATING
 from ui import esc, md
 
 run = ui.current_run()
+base = run.get("unsteadied", run)  # compare against this month's own figures, not a held band
 text = run["wording"].get("whatif_page", {})
 
 # (key, label, min, max, step, format, help) - percentages are entered as whole numbers
@@ -70,15 +71,15 @@ after = whatif.run(run, levers)
 
 a, b = st.columns(2, gap="medium")
 with a:
-    md(score_card("distress", run, after))
+    md(score_card("distress", base, after))
 with b:
-    md(score_card("viability", run, after))
+    md(score_card("viability", base, after))
 
-p0, p1 = score.sentence_case(run["pathway"]), score.sentence_case(after["pathway"])
+p0, p1 = score.sentence_case(base["pathway"]), score.sentence_case(after["pathway"])
 md(f"""<div class="vy-conf"><b>Pathway:</b> {esc(p0)}""" +
    ("" if p0 == p1 else f" <span class='arrow'>&rarr;</span> <b>{esc(p1)}</b>") + "</div>")
 md(f"<div class='vy-verdict' style='font-size:1.45rem;margin:var(--s5) 0 0'>"
-   f"{esc(whatif.describe(levers, run, after, text))}</div>")
+   f"{esc(whatif.describe(levers, base, after, text))}</div>")
 
 ui.heading(text.get("changes_title", "Indicators that change colour"))
 changes = whatif.changed_indicators(run, after)

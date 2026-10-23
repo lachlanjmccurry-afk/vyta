@@ -410,6 +410,56 @@ def d13_debt_to_assets(d, ind):
 
 # ---------- viability indicators ----------
 
+def activity(m):
+    """How much happened in a month's books: sales plus all recorded costs."""
+    return abs(m["revenue"]) + abs(m["cost_of_sales"]) + abs(m["operating_expenses"])
+
+
+def quiet_months(d, share):
+    """Months in a row (ending at the latest) whose activity is under `share` of the business's normal month.
+    Normal = the average of the last 12 months that had activity before that month. Months before the
+    business ever traded (e.g. a new Xero file) never count, because there's no normal to compare with."""
+    months, quiet = d["months"], 0
+    while quiet < len(months):
+        i = len(months) - 1 - quiet
+        earlier = [activity(m) for m in months[:i] if activity(m) > 0][-12:]
+        if len(earlier) < 3 or activity(months[i]) >= share * (sum(earlier) / len(earlier)):
+            break
+        quiet += 1
+    return quiet
+
+
+def d14_sales_vs_normal(d, ind):
+    """Latest month's sales against the average month over the 12 months before it (sales collapse)."""
+    months = d["months"]
+    before = months[-13:-1]
+    if sum(1 for m in before if m["revenue"] > 0) < ind.get("min_selling_months", 3):
+        return not_assessed("Needs at least 3 earlier months with sales to know what a normal month looks like",
+                            short="No sales history")
+    normal = sum(m["revenue"] for m in before) / len(before)
+    latest = months[-1]
+    return value(latest["revenue"] / normal,
+                 f"Sales {money(latest['revenue'])} in {mon(latest)} / average month {money(normal)} "
+                 f"over the previous {len(before)} months",
+                 sales=money(latest["revenue"]), normal=money(normal), month=mon(latest))
+
+
+def d15_books_up_to_date(d, ind):
+    """Are the books still being kept? Counts recent near-empty months; flags liabilities in debit."""
+    share = ind.get("quiet_share", 0.05)
+    quiet = quiet_months(d, share)
+    latest = d["months"][-1]
+    if quiet == 0 and latest["total_liabilities"] < 0:
+        return forced("Amber", "Liabilities < 0",
+                      f"Total liabilities are {money(latest['total_liabilities'])} at {mon(latest)} "
+                      "(below zero, so some liability accounts are in debit)",
+                      case="liabilities_in_debit", liabilities=money(latest["total_liabilities"]),
+                      month=mon(latest))
+    return value(quiet, f"{quiet} month(s) in a row with almost nothing recorded (under {share:.0%} "
+                        f"of a normal month), to {mon(latest)}",
+                 case="up_to_date" if quiet == 0 else None, month=mon(latest))
+
+
 def v1_equity_ratio(d, ind):
     m = d["months"][-1]
     facts = dict(net_assets=money(m["net_assets"]), total_assets=money(m["total_assets"]))
@@ -517,6 +567,7 @@ CALCS = {
     "D5": d5_bank_debt_growth, "D6": d6_facility_utilisation, "D7": d7_creditor_days,
     "D8": d8_creditors_overdue, "D9": d9_debtor_days_trend, "D10": d10_debtors_overdue,
     "D11": d11_sales_up_cash_down, "D12": d12_operating_cash_flow, "D13": d13_debt_to_assets,
+    "D14": d14_sales_vs_normal, "D15": d15_books_up_to_date,
     "V1": v1_equity_ratio, "V2": v2_gross_margin, "V3": v3_gross_margin_trend, "V4": v4_overhead_to_gp,
     "V5": v5_underlying_margin, "V6": v6_revenue_trend, "V7": v7_pipeline, "V8": v8_long_term_cover,
 }
@@ -568,10 +619,28 @@ def band_for(score, kind, cfg):
     return "Not enough data"
 
 
-def apply_overrides(cfg, bands):
+def cannot_pay(d):
+    """Short-term debts bigger than short-term assets, or the business owes more than it owns."""
+    m = d["months"][-1]
+    return m["current_assets"] < m["current_liabilities"] or m["net_assets"] < 0
+
+
+def apply_overrides(cfg, bands, results=None, d=None):
     answers = {q["id"]: q.get("answer") for q in cfg.get("owner_questions", [])}
     notes = []
     for o in cfg.get("overrides", []):
+        if "when_any_red" in o:  # triggered by indicator results, e.g. trading stopped with debts unpaid
+            if results is None or d is None:
+                continue
+            red = [r["ind"]["id"] for r in results if r["ind"]["id"] in o["when_any_red"] and r["rating"] == "Red"]
+            if red and (not o.get("and_cannot_pay") or cannot_pay(d)):
+                if "set_distress_band" in o:
+                    bands["distress"] = o["set_distress_band"]
+                notes.append(f"APPLIED: {o['reason']}")
+            else:
+                notes.append(f"Checked, not triggered ({', '.join(o['when_any_red'])} not Red"
+                             + (" with debts the business can't cover)" if o.get("and_cannot_pay") else ")"))
+            continue
         answer = answers.get(o["when_owner_answer"])
         if answer in (None, ""):
             notes.append(f"Not checked: owner question {o['when_owner_answer']} not answered yet")
@@ -666,7 +735,26 @@ def data_confidence(d, cfg, wording):
         text = text.format(months=months, of=of)
     except (KeyError, ValueError, IndexError):
         pass
-    return {"level": level, "months": months, "of": of, "text": text}
+    reasons = books_warnings(d, cfg)
+    if reasons:  # the books themselves look incomplete: the scores may not show the real position
+        level = "Low"
+        text = (wording.get("data_confidence", {}).get("Unreliable", "") or "{reasons}").replace(
+            "{reasons}", "; ".join(reasons))
+    return {"level": level, "months": months, "of": of, "text": text, "books_warnings": reasons}
+
+
+def books_warnings(d, cfg):
+    """Plain-English reasons the latest books can't be relied on (empty if they look fine)."""
+    ind = next((i for i in cfg.get("indicators", []) if i["id"] == "D15"), {})
+    out = []
+    if not d["months"]:
+        return out
+    quiet = quiet_months(d, ind.get("quiet_share", 0.05))
+    if quiet:
+        out.append(f"almost nothing has been recorded for the last {quiet} month" + ("s" if quiet > 1 else ""))
+    if d["months"][-1]["total_liabilities"] < 0:
+        out.append("total liabilities are below zero, so some liability accounts are in debit")
+    return out
 
 
 def verdict(wording, bands, org):
@@ -690,7 +778,8 @@ def top_issues(results, n=3):
     """The Red/Amber indicators with the most weight behind them: weight x severity (Red counts double),
     so a heavily weighted Red comes first. Ties go to the higher weight, then ID order."""
     flagged = [r for r in results if r["rating"] in SEVERITY]
-    return sorted(flagged, key=lambda r: (-r["ind"]["weight"] * SEVERITY[r["rating"]], -r["ind"]["weight"]))[:n]
+    weight = lambda r: r["ind"].get("issue_weight", r["ind"]["weight"])  # warning flags have weight 0 in the score
+    return sorted(flagged, key=lambda r: (-weight(r) * SEVERITY[r["rating"]], -weight(r)))[:n]
 
 
 def whats_working(results, n=3):
@@ -864,7 +953,49 @@ def compute(base):
     cfg = load_config()
     wording = load_wording()
     d = load_data(base, cfg)
-    return score_data(d, cfg, wording)
+    return score_month(d, cfg, wording)
+
+
+# A band only gets better once two month-ends in a row agree; getting worse shows straight away.
+WORSE_ORDER = {"distress": ["Low", "Moderate", "High"], "viability": ["Strong", "Uncertain", "Weak"]}
+
+
+def score_month(d, cfg, wording, i=None):
+    """The reported score at month-end i (default: the latest), with steadied bands. score_data() gives the
+    raw result for one month; what-if scenarios use that directly, so their changes show in full."""
+    if i is not None:
+        d = dict(d, months=d["months"][:i + 1])
+    run = score_data(d, cfg, wording)
+    if len(d["months"]) < 2:
+        return run
+    prev = score_data(dict(d, months=d["months"][:-1]), cfg, wording)
+    return steady(run, prev, cfg, wording)
+
+
+def steady(run, prev, cfg, wording):
+    """Hold any band that improved since last month-end at last month's band, until a second month confirms."""
+    held = {}
+    for kind, order in WORSE_ORDER.items():
+        now, before = run["bands"][kind], prev["bands"][kind]
+        if now in order and before in order and order.index(now) < order.index(before):
+            held[kind] = (now, before)
+    if not held:
+        return run
+    raw = dict(run, bands=dict(run["bands"]))  # what-if compares against the unheld figures
+    for kind, (now, before) in held.items():
+        run["bands"][kind] = before
+        run["override_notes"] = run["override_notes"] + [
+            f"HELD: {kind.capitalize()} improved to {now} this month; it stays {before} until a second "
+            "month-end confirms the improvement."]
+    bands = run["bands"]
+    run["pathway"] = cfg.get("outcome_matrix", {}).get(bands["distress"], {}).get(bands["viability"],
+                                                                                 "Not enough data for a pathway")
+    run["summary"] = pathway_summary(wording, bands)
+    run["pathway_label"] = pathway_label(wording, bands)
+    run["verdict"] = verdict(wording, bands, run["d"]["org"])
+    run["held"] = held
+    run["unsteadied"] = raw
+    return run
 
 
 def score_data(d, cfg, wording):
@@ -877,7 +1008,7 @@ def score_data(d, cfg, wording):
         r["explanation"] = explain(r, wording, problems)
     scores = {kind: total_score(results, kind) for kind in ("distress", "viability")}
     bands = {kind: band_for(scores[kind][0], kind, cfg) for kind in ("distress", "viability")}
-    override_notes = apply_overrides(cfg, bands)
+    override_notes = apply_overrides(cfg, bands, results, d)
     pathway = cfg.get("outcome_matrix", {}).get(bands["distress"], {}).get(bands["viability"],
                                                                           "Not enough data for a pathway")
     return {"base": base, "d": d, "cfg": cfg, "results": results, "scores": scores, "bands": bands,

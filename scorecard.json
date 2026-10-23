@@ -37,6 +37,13 @@
       "equals": "Yes",
       "set_distress_band": "High",
       "reason": "An unpaid statutory demand is a formal insolvency trigger."
+    },
+    {
+      "id": "stopped_trading",
+      "when_any_red": ["D14", "D15"],
+      "and_cannot_pay": true,
+      "set_distress_band": "High",
+      "reason": "Trading has collapsed or the books have stopped, while short-term debts exceed short-term assets (or the business owes more than it owns)."
     }
   ],
 
@@ -165,6 +172,26 @@
       "direction": "higher_is_worse", "amber": 0.7, "red": 1.0, "weight": 10, "unit": "ratio",
       "if_assets_zero_or_negative": "Red",
       "status": "New from Patrick"
+    },
+    {
+      "id": "D14", "score": "distress", "enabled": true,
+      "flag_only": true, "issue_weight": 10,
+      "name": "Sales against a normal month", "short_name": "Sales vs normal",
+      "calculation": "Latest month's sales / average monthly sales over the 12 months before it",
+      "direction": "lower_is_worse", "amber": 0.5, "red": 0.25, "weight": 0, "unit": "percent",
+      "min_selling_months": 3,
+      "if_fewer_selling_months": "Not assessed",
+      "status": "New Oct 2026: closed-job benchmark (sales collapse before appointment)"
+    },
+    {
+      "id": "D15", "score": "distress", "enabled": true,
+      "flag_only": true, "issue_weight": 10,
+      "name": "Books kept up to date", "short_name": "Books up to date",
+      "calculation": "Months in a row (to the latest) where sales + costs recorded are under 5% of a normal month (average of the last 12 active months). Also Amber when total liabilities are below zero (liability accounts in debit)",
+      "direction": "higher_is_worse", "amber": 1, "red": 2, "weight": 0, "unit": "count",
+      "quiet_share": 0.05,
+      "if_liabilities_below_zero": "Amber",
+      "status": "New Oct 2026: closed-job benchmark (ASIC v Plymin: can't produce timely, accurate financial information)"
     },
 
     {

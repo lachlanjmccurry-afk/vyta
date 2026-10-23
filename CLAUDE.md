@@ -67,6 +67,13 @@ Scoring rules added 9 Oct 2026:
 - Negative ATO balances are worded as credits (`ato_balance()` in `score.py`).
 - Tables use only `short_name` labels (max 20 characters) and short `display` values or reasons (max 18 characters, enforced by `TestTableLabels`). Full names and reasons go in the explanations. If a change to the scoring moves these unexpectedly, investigate before shipping it.
 
+Scoring rules added 23 Oct 2026 (from the closed-job benchmark):
+- **D14 Sales vs normal** and **D15 Books up to date** are *warning flags* (`"flag_only": true`, weight 0, `issue_weight` 10): they don't dilute the weighted score while Green, but rank in Top 3 issues. D15 is also Amber when total liabilities are below zero.
+- **Override `stopped_trading`** (scorecard.json): D14 or D15 Red while current assets < current liabilities (or net assets < 0) → Distress High.
+- **Data confidence → Low** when the books look unreliable (`score.books_warnings`: recent near-empty months, or liabilities below zero), with the reason in the banner.
+- **Steady bands** (`score.score_month` / `score.steady`): a worse band shows at once; a better band only once two month-ends agree (note starts `HELD:`). `compute()` returns steadied results; `score_data()` is raw. What if? compares against `run["unsteadied"]`.
+- **`benchmark.py`** re-scores each `data_business_*` at every month-end before its appointment date (`Data Exports\benchmark.json`, local only) and shows the warning lead time, with changes since the last run. **Run it after any scoring change.** 23 Oct 2026 result: High at the last month-end before appointment for 4 of 5 (A, B, C, D); E's books are unreliable (Low confidence).
+
 ## How the pieces fit together
 
 - **Auth:** `connect_xero.py` runs a local callback server on the port in `XERO_REDIRECT_URI` (default 8080) and picks the tenant whose name contains "demo". `pull_data.py` refreshes tokens automatically. Xero rotates the refresh token every time, so it's saved straight away.

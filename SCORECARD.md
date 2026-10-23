@@ -9,6 +9,10 @@ Source of truth for the scoring engine. Full workbook: `vyta_scorecard_v2.xlsx`.
 - Score = weighted average of indicators with data. Missing data is excluded, not scored as zero.
 - Bands: Distress Low <30, Moderate 30–59, High 60+. Viability Weak <40, Uncertain 40–64, Strong 65+.
 - Override: unpaid statutory demand (owner input) → Distress = High.
+- Override (Oct 2026): D14 or D15 Red while short-term debts exceed short-term assets (or net assets < 0) → Distress = High (trading stopped with debts unpaid).
+- Steady bands (Oct 2026): a band that gets worse shows at once; a band that improves only changes once two month-ends in a row agree.
+- Data confidence drops to Low when the books look unreliable (recent near-empty months, or total liabilities below zero).
+- Warning flags (Oct 2026): D14 and D15 have weight 0, so they don't dilute the score while they're Green (they almost always are). They still show as results, rank in the top issues as if weighted 10, and trigger the stopped-trading override and the Low data confidence.
 - Keep all thresholds, weights and band cut-offs in one config file so they can be tuned per industry later.
 
 ## Distress indicators
@@ -27,6 +31,8 @@ Source of truth for the scoring engine. Full workbook: `vyta_scorecard_v2.xlsx`.
 | D11 | Sales up, cash down | Consecutive months where rolling 3-month revenue rose and cash balance fell | P&L by month + Bank balances | Higher is worse | 2 | 3 | 8 | New from Patrick |
 | D12 | Operating cash flow ratio | Operating cash flow (last 12 months) ÷ current liabilities | Bank transactions / cash flow derived | Lower is worse | 0.4 | 0.2 | 7 | Rick to confirm formula |
 | D13 | Debt-to-asset ratio | Total liabilities ÷ total assets | Balance Sheet report | Higher is worse | 0.7 | 1 | 10 | New from Patrick |
+| D14 | Sales against a normal month | Latest month's sales ÷ average monthly sales over the previous 12 months (Not assessed with fewer than 3 earlier selling months) | P&L by month | Lower is worse | 50% | 25% | 0 | New Oct 2026: closed-job benchmark |
+| D15 | Books kept up to date | Months in a row (to the latest) with sales + costs under 5% of a normal month (average of the last 12 active months); Amber also when total liabilities are below zero | P&L + Balance Sheet by month | Higher is worse | 1 | 2 | 0 | New Oct 2026: closed-job benchmark (Plymin: timely, accurate financial information) |
 
 ## Viability indicators
 | ID | Indicator | Calculation | Xero source | Direction | Amber | Red | Weight | Status |
